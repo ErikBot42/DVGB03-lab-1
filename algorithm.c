@@ -9,7 +9,7 @@
 //
 void bubble_sort(int *a, int n)
 {
-	// TODO: bubble sort
+	// TODO: bubble sort weeeee
 }
 
 void insertion_sort(int *a, int n)
