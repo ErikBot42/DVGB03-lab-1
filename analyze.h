@@ -29,7 +29,7 @@ typedef struct {
 } result_t;
 
 
-void generateSortedList(int *d, int n, bool reverse);
+//void generateSortedList(int *d, int n, bool reverse);
 
 
 // benchmark benchmarks an algorithm a for a specific case c, writing n results

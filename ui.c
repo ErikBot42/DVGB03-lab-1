@@ -57,6 +57,16 @@ static void ui_menu()
 	ui_line('-', MENU_WIDTH);
 }
 
+// TODO: expand with proper columns, this is a placeholder
+static void ui_results(result_t *results, int n)
+{
+	for (int i = 0; i<n; i++)
+	{
+		printf("    size: %d, time: %f\n", results[i].size, results[i].time);
+
+	}
+}
+
 //
 // Public
 //
@@ -82,7 +92,8 @@ void ui_run()
 				break;
 			// Bubble sort
 			case 'c':
-				benchmark(bubble_sort_t, best_t, result, RESULT_ROWS);
+				benchmark(bubble_sort_t, worst_t, result, RESULT_ROWS);
+				ui_results(result, RESULT_ROWS);
 				printf("todo> implemenet BE + present results in FE\n");
 				break;
 			// Invalid input

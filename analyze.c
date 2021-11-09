@@ -12,7 +12,7 @@
 //
 // post:
 // generate sorted list with elements [0,n-1] or [n-1,0] if reverse is true.
-void generateSortedList(int *d, int n, bool reverse)
+static void generateSortedList(int *d, int n, bool reverse)
 {
 	for (int i = 0; i<n; i++)
 	{
@@ -25,7 +25,7 @@ void generateSortedList(int *d, int n, bool reverse)
 
 // pre: srand() has been run at some point.
 // post: [0,maxValue]
-void generateRandomList(int *d, int n, int maxValue)
+static void generateRandomList(int *d, int n, int maxValue)
 {
 	for (int i = 0; i<n; i++)
 	{
@@ -34,7 +34,7 @@ void generateRandomList(int *d, int n, int maxValue)
 }
 
 
-int randomIndex(int list_size)
+static int randomIndex(int list_size)
 {
 	return rand()%list_size;
 }
@@ -42,9 +42,9 @@ int randomIndex(int list_size)
 // pre: d is a pre allocated buffer of length n && n>0.
 // post: generate apropriate list based on algorithm and case also returns a
 // value to search for if using a search algorithm.
-int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
+static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 {
-	int maxVal = 12;
+	int maxVal = RAND_MAX;
 	int searchIndex = 0;
 	switch(a)
 	{
@@ -88,7 +88,7 @@ int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 	return d[searchIndex];
 }
 
-double runTimedBenchmark(const algorithm_t a, int *d, int n, int v, bool* searchResult)
+static double runTimedBenchmark(const algorithm_t a, int *d, int n, int v, bool* searchResult)
 {
 	// function pointers was decided against to make it possible to test both sorting and searching in a single function.
 	
