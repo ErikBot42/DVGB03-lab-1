@@ -1,6 +1,8 @@
 #ifndef ANALYZE_H
 #define ANALYZE_H
 
+#include <stdbool.h>
+
 #define SIZE_START 512
 #define ITERATIONS 4
 
@@ -25,6 +27,10 @@ typedef struct {
 	int size;
 	double time;
 } result_t;
+
+
+void generateSortedList(int *d, int n, bool reverse);
+
 
 // benchmark benchmarks an algorithm a for a specific case c, writing n results
 // to the result buffer buf
