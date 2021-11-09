@@ -48,7 +48,7 @@ static void ui_menu()
 	const char *options[] = {
 		"Menu",
 		"Exit\n",
-		"Bubble sort best case",
+		"Bubble sort ??? case",
 		// TODO: complete menu
 	};
 
@@ -62,10 +62,11 @@ static void ui_results(result_t *results, int n)
 {
 	for (int i = 0; i<n; i++)
 	{
-		printf("    size: %d, time: %f\n", results[i].size, results[i].time);
+		printf("    size: %d, time: %.10e\n", results[i].size, results[i].time);
 
 	}
 }
+
 
 //
 // Public
@@ -92,7 +93,7 @@ void ui_run()
 				break;
 			// Bubble sort
 			case 'c':
-				benchmark(bubble_sort_t, worst_t, result, RESULT_ROWS);
+				benchmark(bubble_sort_t, average_t, result, RESULT_ROWS);
 				ui_results(result, RESULT_ROWS);
 				printf("todo> implemenet BE + present results in FE\n");
 				break;
@@ -104,4 +105,13 @@ void ui_run()
 		}
 	}
 	ui_exit();
+}
+
+
+// only to be used for debug
+void ui_DEBUG_print_list(int *d, int n)
+{
+	printf("debug> ");
+	for (int i = 0; i<n; i++) printf("%d ", d[i]);
+	printf("\n");
 }
