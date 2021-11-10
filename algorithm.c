@@ -63,31 +63,30 @@ int partition(int *a, int n)
 // *a is sorted
 void bubble_sort(int *a, int n)
 {
-	printf("BUBBLE SORT");
-	for (int i = 0; i<n; i++)
-	{
-		for (int j = 0; j<n-1; j++)
-		{
-			if (a[j] > a[j+1])
-			{
-				int tmp = a[j];
-				a[j] = a[j+1];
-				a[j+1] = tmp;
-			}
-		}
-	}
-	//for(int j = 1; j < n; j++){
-	//	int sorted = 1;
-	//	for (int i = 0; i < n - j; i++) {
-	//		if(a[i] > a[i+1]) {
-	//			int temp = a[i];
-	//			a[i] = a[i + 1];
-	//			a[i + 1] = temp;
-	//			sorted = 0;
+	//for (int i = 0; i<n; i++)
+	//{
+	//	for (int j = 0; j<n-1; j++)
+	//	{
+	//		if (a[j] > a[j+1])
+	//		{
+	//			int tmp = a[j];
+	//			a[j] = a[j+1];
+	//			a[j+1] = tmp;
 	//		}
 	//	}
-	//	if(sorted) return;
 	//}
+	for(int j = 1; j < n; j++){
+		int sorted = 1;
+		for (int i = 0; i < n - j; i++) {
+			if(a[i] > a[i+1]) {
+				int temp = a[i];
+				a[i] = a[i + 1];
+				a[i + 1] = temp;
+				sorted = 0;
+			}
+		}
+		if(sorted) return;
+	}
 }
 
 

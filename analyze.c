@@ -18,7 +18,6 @@
 // generate sorted list with elements [0,n-1] or [n-1,0] if reverse is true.
 static void generateSortedList(int *d, int n, bool reverse)
 {
-	//printf("SORTED!!!\n");
 	for (int i = 0; i<n; i++)
 	{
 		if (!reverse)
@@ -32,7 +31,6 @@ static void generateSortedList(int *d, int n, bool reverse)
 // post: [0,maxValue]
 static void generateRandomList(int *d, int n, int maxValue)
 {
-	//printf("RANDOM!!!\n");
 	for (int i = 0; i<n; i++)
 	{
 		d[i] = rand()%(maxValue+1);
@@ -55,7 +53,6 @@ static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 	switch(a)
 	{
 		case bubble_sort_t:
-			//printf("BUBBLE SORT");
 			switch(c)
 			{
 				case best_t:
@@ -65,7 +62,6 @@ static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 					generateSortedList(d,n,true);
 					break;
 				case average_t:
-					//printf("	RANDOM LIST");
 					generateRandomList(d,n,maxVal);
 					break;
 			}
@@ -164,37 +160,26 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
 {
 	int size = SIZE_START;
 
-	int numTests = 1;//ITERATIONS;
+	int numTests = ITERATIONS;
 
 
 	for (int i = 0; i<n; i++) // changing size
 	{
 		int d[size];
 
-		//printf("CURRENT SIZE: %d", size);
-		// TODO: REMOVE THIS WHEN DEBUGGING IS DONE
 		
 		double averageTime = 0;
 		for (int j = 0; j<numTests; j++) // multiple iterations at a given size
 		{
 			int v = generateTestList(a,c,d,size);
 			bool searchResult;
-			//printf("debug> before:\n");
-			//ui_DEBUG_print_list(d, size);
 
 			averageTime += runTimedBenchmark(a,d,size,v,&searchResult)/((double)numTests);
 
-			//printf("debug> after:\n");
-			//ui_DEBUG_print_list(d, size);
-			if (!isSorted(d, size))
-			{
-				printf("debug> LIST IS NOT SORTED!!!!!!!!!!!!!!!!");
-				//TODO: verify result
-			}
+			if (!isSorted(d, size)) printf("error> LIST WAS NOT SORTED!");
 
 		}
 		
-		// TODO: REMOVE THIS WHEN DEBUGGING IS DONE
 
 
 		buf[i].size = size;
