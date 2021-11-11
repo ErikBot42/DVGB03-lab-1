@@ -1,5 +1,5 @@
 #include "algorithm.h"
-
+#include "stdio.h"
 //
 // Private
 //
@@ -43,8 +43,8 @@ int partition(int *a, int n)
 		if(lower <= upper)
 		{
 			int temp = a[upper];
-			a[upper] = a[0];
-			a[0] = temp;
+			a[upper] = a[lower];
+			a[lower] = temp;
 		}
 	} while(lower <= upper);
 
@@ -92,14 +92,24 @@ void insertion_sort(int *a, int n)
 // n = number of elements (n>=2)
 // post:
 // *a is sorted
+void quick_sort(int *a, int n);
+
 void quick_sort(int *a, int n)
 {
-	int tal;
-	if (n <= 1) return;
+	//static int iter = 0;
+	//printf("%d\n", iter++);
+	//fflush(stdout);
 
-	tal = partition(a, n);
-	quick_sort(a, tal); //sorts lower to mid
-	quick_sort(a + tal, n - tal); //sorts mid to end
+	if (n <= 1) return;
+	
+	int b = partition(a, n);
+
+	quick_sort(a, b); //sorts lower to mid
+	quick_sort(a+b+1, n-b-1); 
+
+
+	//quick_sort(a, tal); //sorts lower to mid
+	//quick_sort(a + tal, n - tal); //sorts mid to end
 	
 	// TODO: quick sort
 }

@@ -171,6 +171,8 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
 		double averageTime = 0;
 		for (int j = 0; j<numTests; j++) // multiple iterations at a given size
 		{
+			printf(".");
+			fflush(stdout);
 			int v = generateTestList(a,c,d,size);
 			bool searchResult;
 

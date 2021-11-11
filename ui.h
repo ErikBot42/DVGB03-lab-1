@@ -2,7 +2,7 @@
 #define UI_H
 
 #define MENU_WIDTH 40
-#define RESULT_ROWS 7
+#define RESULT_ROWS 5
 
 void ui_DEBUG_print_list(int *d, int n); // FOR DEBUG ONLY
 
