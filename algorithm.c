@@ -1,7 +1,5 @@
 #include "algorithm.h"
 
-#include <stdio.h> // for debug ONLY
-
 //
 // Private
 //
@@ -10,22 +8,22 @@
 int binary_search_index(const int *a, int n, int v)
 {
 	int first = 0;
-	int last = n - 1;
-	int middle;
+  int last = n - 1;
+  int middle;
 
-	while (first <= last){
-		middle = (first + last) / 2;
+  while (first <= last){
+  middle = (first + last) / 2;
 
-		if (a[middle] == v) {
-			return middle;
-		}
-		else if(a[middle] < v){
-			first = middle + 1;
-		}
-		else {
-			last = middle - 1;
-		}
-	}
+    if (a[middle] == v) {
+    return middle;
+    }
+    else if(a[middle] < v){
+    first = middle + 1;
+    }
+    else {
+    last = middle - 1;
+    }
+  }
 	return -1; 
 }
 
@@ -63,33 +61,21 @@ int partition(int *a, int n)
 // *a is sorted
 void bubble_sort(int *a, int n)
 {
-	//for (int i = 0; i<n; i++)
-	//{
-	//	for (int j = 0; j<n-1; j++)
-	//	{
-	//		if (a[j] > a[j+1])
-	//		{
-	//			int tmp = a[j];
-	//			a[j] = a[j+1];
-	//			a[j+1] = tmp;
-	//		}
-	//	}
-	//}
-	for(int j = 1; j < n; j++){
+  for(int j = 1; j < n; j++){
 		int sorted = 1;
-		for (int i = 0; i < n - j; i++) {
-			if(a[i] > a[i+1]) {
-				int temp = a[i];
-				a[i] = a[i + 1];
-				a[i + 1] = temp;
+    for (int i = 0; i < n - j; i++) {
+     	if(a[i] > a[i+1]) {
+       	int temp = a[i];
+      	a[i] = a[i + 1];
+      	a[i + 1] = temp;
 				sorted = 0;
-			}
-		}
+      }
+    }
 		if(sorted) return;
-	}
+  }
 }
-
-
+	// TODO: done
+//}
 
 // pre: 
 // *a = array
@@ -109,12 +95,13 @@ void insertion_sort(int *a, int n)
 void quick_sort(int *a, int n)
 {
 	int tal;
-	if(n > 0)
-	{
-		tal = partition(a, n);
-		quick_sort(a, tal-1);
-	}
-	// TODO: quick sort, tror inte denna funkar
+	if (n <= 1) return;
+
+	tal = partition(a, n);
+	quick_sort(a, tal); //sorts lower to mid
+	quick_sort(a + tal, n - tal); //sorts mid to end
+	
+	// TODO: quick sort
 }
 
 bool linear_search(const int *a, int n, int v)
@@ -130,21 +117,21 @@ bool linear_search(const int *a, int n, int v)
 bool binary_search(const int *a, int n, int v)
 {
 	int first = 0;
-	int last = n - 1;
-	int middle;
+  int last = n - 1;
+  int middle;
 
-	while (first <= last){
-		middle = (first + last) / 2;
+  while (first <= last){
+  middle = (first + last) / 2;
 
-		if (a[middle] == v) {
-			return true;
-		}
-		else if(a[middle] < v){
-			first = middle + 1;
-		}
-		else {
-			last = middle - 1;
-		}
-	}
+    if (a[middle] == v) {
+    return true;
+    }
+    else if(a[middle] < v){
+    first = middle + 1;
+    }
+    else {
+    last = middle - 1;
+    }
+  }
 	return false; // TODO: optimization
 }
