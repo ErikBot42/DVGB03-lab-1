@@ -1,54 +1,66 @@
 #include "algorithm.h"
 #include "stdio.h"
+#include "ui.h"
 //
 // Private
 //
 
 //Binary search for index
-int binary_search_index(const int *a, int n, int v)
+//static int binary_search_index(const int *a, int n, int v)
+//{
+//    int first = 0;
+//    int last = n - 1;
+//    int middle;
+//
+//    while (first <= last){
+//        middle = (first + last) / 2;
+//
+//        if (a[middle] == v) {
+//            return middle;
+//        }
+//        else if(a[middle] < v){
+//            first = middle + 1;
+//        }
+//        else {
+//            last = middle - 1;
+//        }
+//    }
+//    return -1; 
+//}
+
+// post: swap the value the pointers point to.
+static inline void swp (int *a, int *b)
 {
-	int first = 0;
-  int last = n - 1;
-  int middle;
-
-  while (first <= last){
-  middle = (first + last) / 2;
-
-    if (a[middle] == v) {
-    return middle;
-    }
-    else if(a[middle] < v){
-    first = middle + 1;
-    }
-    else {
-    last = middle - 1;
-    }
-  }
-	return -1; 
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
 }
 
 //Split array into lower and upper, return middle value 
-int partition(int *a, int n)
+// pre: *a is a list, n is number of elements
+// post: put lower elements to the left and higher to the right and return last index in lower half (possibly negative
+static int partition(int *a, int n)
 {
-	int pivot, lower, upper;
-	pivot = a[0];
-	lower = 0;
-	upper = n - 1;
+    int pivot = a[0];
+    int lower = 0;
+    int upper = n - 1;
 
-	do
-	{
-		while(a[lower] <= pivot && lower <= upper) lower++;
-		while(a[upper] > pivot && lower <= upper) upper--;
+    do
+    {
+        while(a[lower] <= pivot && lower <= upper) lower++;
+        while(a[upper] > pivot && lower <= upper) upper--;
 
-		if(lower <= upper)
-		{
-			int temp = a[upper];
-			a[upper] = a[lower];
-			a[lower] = temp;
-		}
-	} while(lower <= upper);
+        if(lower <= upper)
+        {
+            swp(&a[upper], &a[lower]);
 
-	return upper;
+            // if elements are swapped, they are sorted
+            upper--; lower++;
+        }
+    } while(lower <= upper);
+    swp(&a[upper], &a[0]);
+
+    return upper;
 }
 //
 // Public
@@ -61,20 +73,21 @@ int partition(int *a, int n)
 // *a is sorted
 void bubble_sort(int *a, int n)
 {
-  for(int j = 1; j < n; j++){
-		int sorted = 1;
-    for (int i = 0; i < n - j; i++) {
-     	if(a[i] > a[i+1]) {
-       	int temp = a[i];
-      	a[i] = a[i + 1];
-      	a[i + 1] = temp;
-				sorted = 0;
-      }
+    for(int j = 1; j < n; j++){
+        int sorted = 1;
+        for (int i = 0; i < n - j; i++) {
+            if(a[i] > a[i+1]) {
+                swp(&a[i], &a[i+1]);
+                //int temp = a[i];
+                //a[i] = a[i + 1];
+                //a[i + 1] = temp;
+                sorted = 0;
+            }
+        }
+        if(sorted) return;
     }
-		if(sorted) return;
-  }
 }
-	// TODO: done
+// TODO: done
 //}
 
 // pre: 
@@ -84,7 +97,7 @@ void bubble_sort(int *a, int n)
 // *a is sorted
 void insertion_sort(int *a, int n)
 {
-	// TODO: insertion sort
+    // TODO: insertion sort
 }
 
 // pre: 
@@ -96,52 +109,52 @@ void quick_sort(int *a, int n);
 
 void quick_sort(int *a, int n)
 {
-	//static int iter = 0;
-	//printf("%d\n", iter++);
-	//fflush(stdout);
+    //static int iter = 0;
+    //printf("%d\n", iter++);
+    //fflush(stdout);
 
-	if (n <= 1) return;
-	
-	int b = partition(a, n);
+    if (n <= 1) return;
 
-	quick_sort(a, b); //sorts lower to mid
-	quick_sort(a+b+1, n-b-1); 
+    int b = partition(a, n);
+    //printf("a[%d] = %d, ", b, a[b]); ui_DEBUG_print_list(a, n);
 
+    quick_sort(a, b); //sorts lower to mid
+    quick_sort(a+b+1, n-b-1); 
 
-	//quick_sort(a, tal); //sorts lower to mid
-	//quick_sort(a + tal, n - tal); //sorts mid to end
-	
-	// TODO: quick sort
+    //quick_sort(a, tal); //sorts lower to mid
+    //quick_sort(a + tal, n - tal); //sorts mid to end
+
+    // TODO: quick sort
 }
 
 bool linear_search(const int *a, int n, int v)
 {
-	for (int i = 0; i < n; i++)
-	{
-		if (a[i] == v)
-			return true;
-	}
-	return false; // TODO: done
+    for (int i = 0; i < n; i++)
+    {
+        if (a[i] == v)
+            return true;
+    }
+    return false; 
 }
 
 bool binary_search(const int *a, int n, int v)
 {
-	int first = 0;
-  int last = n - 1;
-  int middle;
+    int first = 0;
+    int last = n - 1;
+    int middle;
 
-  while (first <= last){
-  middle = (first + last) / 2;
+    while (first <= last){
+        middle = (first + last) / 2;
 
-    if (a[middle] == v) {
-    return true;
+        if (a[middle] == v) {
+            return true;
+        }
+        else if(a[middle] < v){
+            first = middle + 1;
+        }
+        else {
+            last = middle - 1;
+        }
     }
-    else if(a[middle] < v){
-    first = middle + 1;
-    }
-    else {
-    last = middle - 1;
-    }
-  }
-	return false; // TODO: optimization
+    return false; // TODO: optimization
 }

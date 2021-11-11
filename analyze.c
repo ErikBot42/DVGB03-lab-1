@@ -1,9 +1,8 @@
 #include "analyze.h"
 #include "algorithm.h"
 
-#include "ui.h" // TODO: remove when no longer debugging
-
-#include <stdio.h> // TODO: remove when no longer needed for debugging
+#include "ui.h" 
+#include <stdio.h>
 
 #include <stdlib.h>
 #include <time.h>
@@ -165,14 +164,22 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
 
 	for (int i = 0; i<n; i++) // changing size
 	{
-		int d[size];
-
+		//int d[size];
+        
+        // stack is very limited, allocating on heap instead.
+        if (ui_debug()) printf("allocating %d bytes.\n", (int)(size/sizeof(int)));
+        int *d = (int *) malloc(sizeof(int)*(size));
+        if (d == NULL)
+        {
+            printf("error> %d bytes of memory could not be allocated.\n", (int)(size/sizeof(int)));
+            break;
+        }
 		
 		double averageTime = 0;
+        bool debug = ui_debug();
 		for (int j = 0; j<numTests; j++) // multiple iterations at a given size
 		{
-			printf(".");
-			fflush(stdout);
+            if (debug) printf(".");
 			int v = generateTestList(a,c,d,size);
 			bool searchResult;
 
@@ -181,6 +188,8 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
 			if (!isSorted(d, size)) printf("error> LIST WAS NOT SORTED!");
 
 		}
+
+        free(d);
 		
 
 

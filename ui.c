@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 //
 // Private
@@ -19,12 +20,19 @@ static void ui_exit()
 	printf("info> bye\n");
 }
 
-static char ui_get_choice()
-{
-	char buf[3];
+//static char ui_get_choice()
+//{ char buf[3];
+//	printf("input> ");
+//	return read_line(buf, 3) ? buf[0] : 0;
+//}
 
+static char * ui_get_choices(int n)
+{
+    n+=2; 
+    char * buf = (char *) malloc(sizeof(char)*n);
 	printf("input> ");
-	return read_line(buf, 3) ? buf[0] : 0;
+	if(!read_line(buf, n)) buf[0] = '\0';
+    return buf;
 }
 
 static void ui_line(char c, int n)
@@ -77,7 +85,12 @@ static void ui_print_case_full(algorithm_t a)
 	printf("Current case: "); ui_print_case(a); printf("\n");
 }
 
-static void ui_menu(algorithm_t a, case_t c)
+static void ui_print_num_rows(int rows)
+{
+    printf("Current number of rows: %d\n", rows);
+}
+
+static void ui_menu(algorithm_t a, case_t c, int rows)
 {
 	const char *options[] = {
 		"Menu",
@@ -91,6 +104,8 @@ static void ui_menu(algorithm_t a, case_t c)
 		"Best case",
 		"Worst case",
 		"Average case",
+        "Increase rows",
+        "Decrease rows",
 
 		// TODO: complete menu
 	};
@@ -98,6 +113,7 @@ static void ui_menu(algorithm_t a, case_t c)
 	ui_line('=', MENU_WIDTH);
 	ui_print_algorithm_full(a); 
 	ui_print_case_full(c); 
+    ui_print_num_rows(rows);
 	ui_line('-', MENU_WIDTH);
 	ui_menu_options(options, sizeof(options) / sizeof(char *));
 	ui_line('-', MENU_WIDTH);
@@ -123,11 +139,12 @@ static void ui_results(result_t *results, int n)
 	}; int num_models = sizeof(models)/sizeof(models[0]);
 	printf("\nResults:\n\n");
 
-	printf("%*s ", width+3, "size"); for (int j = 0; j<num_models; j++) { printf("%*s ", width+3, models[j].name); } printf("\n");
+	printf("%*s ", width+3, "size"); printf("%*s ", width+3, "size (GB)"); for (int j = 0; j<num_models; j++) { printf("%*s ", width+3, models[j].name); } printf("\n");
 
 	for (int i = 0; i<n; i++)
 	{
 		printf("%*d ", width+3, results[i].size);
+		printf("% *f ", width+3, results[i].size*sizeof(int)/1024.0/1024.0/1024.0);
 		for (int j = 0; j<num_models; j++) 
 		{ 
 			double res = results[i].time/(*(models[j].fp))(results[i].size);
@@ -147,9 +164,12 @@ static void ui_results(result_t *results, int n)
 		models[j].sd = sqrt(models[j].sd);
 	}
 
-	printf("\n%*s ", width+3, "avg"); for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].avg); } printf("\n");
-	printf("%*s ", width+3, "sd"); for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].sd); } printf("\n");
-	printf("%*s ", width+3, "sd/avg"); for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].sd/models[j].avg); } printf("\n");
+	printf("\n%*s ", width+3, "avg"); printf("%*s ", width+3, ""); 
+    for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].avg); } printf("\n");
+	printf("%*s ", width+3, "sd"); printf("%*s ", width+3, ""); 
+    for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].sd); } printf("\n");
+	printf("%*s ", width+3, "sd/avg"); printf("%*s ", width+3, ""); 
+    for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].sd/models[j].avg); } printf("\n");
 
 	model_t minModel = models[0];
 	for (int i = 1; i<num_models; i++) { if ((minModel.sd/minModel.avg)>(models[i].sd/models[i].avg)) minModel = models[i]; }
@@ -179,50 +199,76 @@ static void ui_set_print_case(case_t *c, case_t c_new)
 void ui_run()
 {
 	bool running, show_menu;
-
-	result_t result[RESULT_ROWS];
+    int result_rows = RESULT_ROWS;
 	
 	case_t c = average_t;
 	algorithm_t a = bubble_sort_t;
-
-	ui_set_print_case(&c,c);
-	ui_set_print_algorithm(&a,a);
+    
+	//ui_set_print_case(&c,c);
+	//ui_set_print_algorithm(&a,a);
 
 	show_menu = true;
 	running = true;
+    
+    int max_num_choices = 10;
+
 	while (running) {
 		if (show_menu) {
 			show_menu = false;
-			ui_menu(a, c);
+			ui_menu(a, c, result_rows);
 		}
-		switch (ui_get_choice()) {
-			// House keeping
-			case 'a':
-				show_menu = true;
-				break;
-			case 'b':
-				running = false;
-				break;
-			case 'c':
-				benchmark(a, c, result, RESULT_ROWS);
-				ui_results(result, RESULT_ROWS);
-				break;
+        
+        // this allows the user to select multiple things at once
+        char * choices = ui_get_choices(max_num_choices);
+        bool keepReadingChoices = true;
+        for (int i = 0; i<max_num_choices && keepReadingChoices; i++)
+        {
+            char choice = choices[i];
+            switch (choice) {
+                // House keeping
+                case 'a':
+                    show_menu = true;
+                    break;
+                case 'b':
+                    running = false;
+                    break;
+                case 'c':
+                    {
+                        result_t result[result_rows];
+                        benchmark(a, c, result, result_rows);
+                        ui_results(result, result_rows);
+                    }
+                    break;
 
-			case 'd': ui_set_print_algorithm(&a,bubble_sort_t); break;
-			case 'e': ui_set_print_algorithm(&a,insertion_sort_t); break;
-			case 'f': ui_set_print_algorithm(&a,quick_sort_t); break;
-			case 'g': ui_set_print_algorithm(&a,linear_search_t); break;
-			case 'h': ui_set_print_algorithm(&a,binary_search_t); break;
+                case 'd': ui_set_print_algorithm(&a,bubble_sort_t); break;
+                case 'e': ui_set_print_algorithm(&a,insertion_sort_t); break;
+                case 'f': ui_set_print_algorithm(&a,quick_sort_t); break;
+                case 'g': ui_set_print_algorithm(&a,linear_search_t); break;
+                case 'h': ui_set_print_algorithm(&a,binary_search_t); break;
 
-			case 'i': ui_set_print_case(&c,best_t); break;
-			case 'j': ui_set_print_case(&c,worst_t); break;
-			case 'k': ui_set_print_case(&c,average_t); break;
+                case 'i': ui_set_print_case(&c,best_t); break;
+                case 'j': ui_set_print_case(&c,worst_t); break;
+                case 'k': ui_set_print_case(&c,average_t); break;
+                case 'l': printf("info> "); ui_print_num_rows(++result_rows); break;
+                case 'm': printf("info> "); ui_print_num_rows(--result_rows); break;
 
-			default:
-				show_menu = false;
-				ui_invalid_input();
-				break;
-		}
+                case '\0':
+                    keepReadingChoices = false;
+                    if (i == 0) 
+                    {
+                        show_menu = false;
+                        ui_invalid_input();
+                    }
+                    break;
+
+                default:
+                    keepReadingChoices = false;
+                    show_menu = false;
+                    ui_invalid_input();
+                    break;
+            }
+        }
+        free(choices);
 	}
 	ui_exit();
 }
@@ -231,7 +277,19 @@ void ui_run()
 // only to be used for debug, the user should not ever see the lists
 void ui_DEBUG_print_list(int *d, int n)
 {
+    if (ui_debug())
+    {
+        for (int i = 0; i<n; i++) printf("%d ", d[i]);
+        printf("\n");
+    }
+}
+
+bool ui_debug()
+{
+#ifdef DEBUG
 	printf("debug> ");
-	for (int i = 0; i<n; i++) printf("%d ", d[i]);
-	printf("\n");
+    return true;
+#else
+    return false;
+#endif
 }

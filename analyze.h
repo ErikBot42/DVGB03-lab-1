@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #define SIZE_START 512
-//#define SIZE_START 128 
+//#define SIZE_START 8
 #define ITERATIONS 4
 
 // algorithm_t defines different algorithms

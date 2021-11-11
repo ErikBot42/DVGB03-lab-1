@@ -2,7 +2,11 @@
 #define UI_H
 
 #define MENU_WIDTH 40
-#define RESULT_ROWS 5
+#define RESULT_ROWS 7
+
+#define DEBUG
+
+#include <stdbool.h>
 
 void ui_DEBUG_print_list(int *d, int n); // FOR DEBUG ONLY
 
@@ -16,5 +20,6 @@ typedef struct {
 	double sd;
 } model_t;
 
+bool ui_debug();
 
 #endif
