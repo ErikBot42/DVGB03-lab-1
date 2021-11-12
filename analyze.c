@@ -6,13 +6,33 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 
 //
 // Private
 //
 //
-//
+
+// random value with the max size of an int
+// using bit shift of true value
+// device dependant, could be used to make sure rand() gives enough bits
+static inline int intRand()
+{
+    return rand();
+    //int n = log2(RAND_MAX); // this line will hopefully be optimized away by the compiler...
+    //int maxVal = 1 << n;
+
+    //int maxIntSizeLog2 = sizeof(int);
+    //int maxIntSize = 1 << maxIntSizeLog2;
+
+    //if (maxVal == maxIntSize) return rand();
+    //
+    //printf("RAND_MAX IS VERY LOW: %d", RAND_MAX);
+    //exit(1);
+
+}
+
 // post:
 // generate sorted list with elements [0,n-1] or [n-1,0] if reverse is true.
 static void generateSortedList(int *d, int n, bool reverse)
@@ -32,14 +52,14 @@ static void generateRandomList(int *d, int n, int maxValue)
 {
 	for (int i = 0; i<n; i++)
 	{
-		d[i] = rand()%(maxValue+1);
+		d[i] = intRand()%(maxValue+1);
 	}
 }
 
 
 static int randomIndex(int list_size)
 {
-	return rand()%list_size;
+	return intRand()%list_size;
 }
 
 // pre: d is a pre allocated buffer of length n && n>0.
@@ -52,6 +72,7 @@ static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 	switch(a)
 	{
 		case bubble_sort_t:
+        case insertion_sort_t:
 			switch(c)
 			{
 				case best_t:
@@ -66,6 +87,7 @@ static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 			}
 			break;
 		case binary_search_t:
+            // constant in terms of list contents.
 			generateSortedList(d,n,false);
 			searchIndex = randomIndex(n);
 			break;
@@ -83,6 +105,7 @@ static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 			generateSortedList(d,n,false);
 			break;
 		default:
+            printf("error> case not implemented, using a random list\n");
 			//TODO: implement best/worst creation of list for other sort algorithms.
 			generateRandomList(d,n,maxVal);
 			break;
@@ -160,6 +183,7 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
 	int size = SIZE_START;
 
 	int numTests = ITERATIONS;
+    
 
 
 	for (int i = 0; i<n; i++) // changing size
@@ -167,6 +191,7 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
 		//int d[size];
         
         // stack is very limited, allocating on heap instead.
+        if ((RAND_MAX)<size && ui_debug()) printf("LIST SIZE IS GREATER THAN RAND_MAX!\n");
         if (ui_debug()) printf("allocating %d bytes.\n", (int)(size/sizeof(int)));
         int *d = (int *) malloc(sizeof(int)*(size));
         if (d == NULL)
@@ -179,15 +204,17 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
         bool debug = ui_debug();
 		for (int j = 0; j<numTests; j++) // multiple iterations at a given size
 		{
-            if (debug) printf(".");
+            if (debug) { printf("."); fflush(stdout); }
 			int v = generateTestList(a,c,d,size);
-			bool searchResult;
+			bool searchResult = true;
 
 			averageTime += runTimedBenchmark(a,d,size,v,&searchResult)/((double)numTests);
 
-			if (!isSorted(d, size)) printf("error> LIST WAS NOT SORTED!");
+			if (!isSorted(d, size)) printf("error> LIST WAS NOT SORTED!\n");
+			if (!searchResult) printf("error> ALGORITHM COULD NOT FIND ELEMENT!\n");
 
 		}
+        if (debug) printf("\n");
 
         free(d);
 		

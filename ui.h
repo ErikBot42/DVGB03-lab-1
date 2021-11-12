@@ -14,10 +14,10 @@ void ui_DEBUG_print_list(int *d, int n); // FOR DEBUG ONLY
 void ui_run();
 
 typedef struct {
-	double (*fp) (double);
-	char * name;
-	double avg;
-	double sd;
+    double (*fp) (double);
+    char * name;
+    double avg;
+    double sd;
 } model_t;
 
 bool ui_debug();

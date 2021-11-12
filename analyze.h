@@ -5,7 +5,8 @@
 
 #define SIZE_START 512
 //#define SIZE_START 8
-#define ITERATIONS 4
+//#define ITERATIONS 4
+#define ITERATIONS 256
 
 // algorithm_t defines different algorithms
 typedef enum {
