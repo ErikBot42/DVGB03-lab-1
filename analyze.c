@@ -15,7 +15,6 @@
 //
 
 // random value with the max size of an int
-// using bit shift of true value
 // device dependant, could be used to make sure rand() gives enough bits
 static inline int intRand()
 {
@@ -62,18 +61,28 @@ static int randomIndex(int list_size)
 	return intRand()%list_size;
 }
 
+static void err_case_not_implemented()
+{
+    if(ui_error()) printf("Case not implemented for this algorithm, using a random list\n");
+}
+
+//static void quickSortBestCase(int *d, int n)
+//{
+//    
+//}
+
 // pre: d is a pre allocated buffer of length n && n>0.
 // post: generate apropriate list based on algorithm and case also returns a
 // value to search for if using a search algorithm.
-static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
+static int generateTestList(const ac_t ac, int *d, int n)
 {
 	int maxVal = RAND_MAX;//100;
 	int searchIndex = 0;
-	switch(a)
+	switch(ac.a)
 	{
 		case bubble_sort_t:
         case insertion_sort_t:
-			switch(c)
+			switch(ac.c)
 			{
 				case best_t:
 					generateSortedList(d,n,false);
@@ -86,13 +95,27 @@ static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 					break;
 			}
 			break;
+        case quick_sort_t:
+            switch(ac.c)
+            {
+                case best_t:
+                    err_case_not_implemented();         
+					generateRandomList(d,n,maxVal);
+                    break;
+                case worst_t:
+					generateSortedList(d,n,false);
+                    break;
+                case average_t:
+					generateRandomList(d,n,maxVal);
+                    break;
+            }
 		case binary_search_t:
             // constant in terms of list contents.
 			generateSortedList(d,n,false);
 			searchIndex = randomIndex(n);
 			break;
 		case linear_search_t:
-			switch(c)
+			switch(ac.c)
 			{
 				case best_t:
 					searchIndex = 0;
@@ -104,11 +127,10 @@ static int generateTestList(const algorithm_t a, const case_t c, int *d, int n)
 			}
 			generateSortedList(d,n,false);
 			break;
-		default:
-            printf("error> case not implemented, using a random list\n");
-			//TODO: implement best/worst creation of list for other sort algorithms.
-			generateRandomList(d,n,maxVal);
-			break;
+//		default:
+//            err_case_not_implemented();         
+//			generateRandomList(d,n,maxVal);
+//			break;
 	}
 	
 	return d[searchIndex];
@@ -178,7 +200,7 @@ bool isSorted(int *d, int n)
 // run a number of benchmarks for a variable size
 //
 // TODO: verify sort/search, search for elements that do not exist 
-void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
+void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 {
 	int size = SIZE_START;
 
@@ -190,9 +212,9 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
 	{
 		//int d[size];
         
-        // stack is very limited, allocating on heap instead.
+        // stack is very limited (about 1 MB), allocating on heap instead.
         if ((RAND_MAX)<size && ui_debug()) printf("LIST SIZE IS GREATER THAN RAND_MAX!\n");
-        if (ui_debug()) printf("allocating %d bytes.\n", (int)(size/sizeof(int)));
+        if (ui_debug()) printf("allocating %d bytes.\n", (int)(size*sizeof(int)));
         int *d = (int *) malloc(sizeof(int)*(size));
         if (d == NULL)
         {
@@ -205,10 +227,11 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
 		for (int j = 0; j<numTests; j++) // multiple iterations at a given size
 		{
             if (debug) { printf("."); fflush(stdout); }
-			int v = generateTestList(a,c,d,size);
+			int v = generateTestList(ac,d,size);
 			bool searchResult = true;
 
-			averageTime += runTimedBenchmark(a,d,size,v,&searchResult)/((double)numTests);
+            if (debug) { printf("_"); fflush(stdout); }
+			averageTime += runTimedBenchmark(ac.a,d,size,v,&searchResult)/((double)numTests);
 
 			if (!isSorted(d, size)) printf("error> LIST WAS NOT SORTED!\n");
 			if (!searchResult) printf("error> ALGORITHM COULD NOT FIND ELEMENT!\n");
@@ -217,8 +240,6 @@ void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n)
         if (debug) printf("\n");
 
         free(d);
-		
-
 
 		buf[i].size = size;
 		buf[i].time = averageTime;

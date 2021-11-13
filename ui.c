@@ -6,18 +6,29 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 //
 // Private
 //
+
+// ONLY changed for LaTeX print
+static bool enableExtraPrints=true; 
+
+static bool ui_info()
+{
+    if (enableExtraPrints) printf("info> ");
+    return enableExtraPrints; // allways print info
+}
+
 static void ui_invalid_input()
 {
-    printf("info> bad input\n");
+    if (ui_info()) printf("bad input\n");
 }
 
 static void ui_exit()
 {
-    printf("info> bye\n");
+    if (ui_info()) printf("exiting...\n");
 }
 
 //static char ui_get_choice()
@@ -85,12 +96,12 @@ static void ui_print_case_full(algorithm_t a)
     printf("Current case: "); ui_print_case(a); printf("\n");
 }
 
-static void ui_print_num_rows(int rows)
+static void ui_print_num_rows(int rows, int start_size)
 {
-    printf("Current number of rows: %d\n", rows);
+    printf("Current number of rows: %d (%d elements)\n", rows, start_size << (rows-1));
 }
 
-static void ui_menu(algorithm_t a, case_t c, int rows)
+static void ui_menu(algorithm_t a, case_t c, int rows, int start_size)
 {
     const char *options[] = {
         "Menu",
@@ -103,32 +114,114 @@ static void ui_menu(algorithm_t a, case_t c, int rows)
         "Binary search\n",
         "Best case",
         "Worst case",
-        "Average case",
+        "Average case\n",
         "Increase rows",
         "Decrease rows",
-
-        // TODO: complete menu
+        "Output results as LaTeX table",
     };
 
     ui_line('=', MENU_WIDTH);
     ui_print_algorithm_full(a); 
     ui_print_case_full(c); 
-    ui_print_num_rows(rows);
+    ui_print_num_rows(rows, start_size);
     ui_line('-', MENU_WIDTH);
     ui_menu_options(options, sizeof(options) / sizeof(char *));
     ui_line('-', MENU_WIDTH);
 }
 
+static double sizeToGB(double size)
+{
+    return (size*sizeof(int))/1024.0/1024.0/1024.0;
+}
+
+static void mm(pi_t p) {if (p.l) printf("$");}
+
+static void table_begin() {printf("\\begin{table}\n\\tabcolsep=0.09cm\n");}
+static void table_end() {printf("\\end{table}\n");}
+static void tabular_begin() {printf("\\begin{tabular}\n");}
+static void tabular_end() {printf("\\end{tabular}\n");}
+
+static void ln()
+{
+    printf("\n");
+}
+
+// produces caption for table
+static void ui_results_print_min_model(model_t *models, ac_t ac, pi_t p, int n)
+{
+    ln();
+    if (p.l) printf("\\caption{");
+    model_t minModel = models[0];
+    for (int i = 1; i<n; i++) { if ((minModel.sd/minModel.avg)>(models[i].sd/models[i].avg)) minModel = models[i]; }
+    printf("In ");
+    ui_print_case(ac.c);
+    printf(" case ");
+    ui_print_algorithm(ac.a);
+    printf(", ");
+    mm(p); printf("%s", minModel.name); mm(p);
+    printf(" has the lowest sd/avg, where sd = standard deviation, avg = average value. ");
+    printf("Values are calculated with ");
+    mm(p); printf("time/f(size)"); mm(p);
+    printf(", where "); 
+    mm(p); printf("f"); mm(p);
+    printf(" is the highest order term of the complexity. ");
+    if (p.l) printf("This table and caption was automatically generated. ");
+    if (p.l) printf("}");
+    ln();
+}
+
+// either prints ui header or LaTeX code for table
+static void ui_results_print_header(pi_t p, int cols)
+{
+    ln();
+    if (enableExtraPrints) {
+        //ui_line('=', MENU_WIDTH);
+        ui_line('=', (p.w+4)*cols);
+        printf("Results:\n\n");
+    }
+}
+
+
+// c lacks function overloading
+static void pln0(pi_t *p, bool lx_tbl_newline)
+{ 
+    if (p->e) 
+    {
+        if (lx_tbl_newline) printf("\\\\");
+        printf("\\hline");
+    }
+    printf("\n");
+    p->s = false;
+}
+
+static void pln(pi_t *p)
+{
+    pln0(p, true);
+}
+
+static void pln1(pi_t *p)
+{
+    pln0(p, false);
+}
+
+static void p_pre(pi_t *p) { if (p->s) printf("&&"); if (p->m) printf("$"); } // print prefix
+static void p_suf(pi_t *p) { if (p->m) printf("$"); p->m = false; } // print suffix
+static void p_int(int n, pi_t *p) { p->m = p->l; p_pre(p); printf("%*d ", p->w+3, n); p_suf(p); }
+static void p_fix(double d, pi_t *p) { p->m = p->l; p_pre(p); printf("% *f ", p->w+3, d); p_suf(p); }
+static void p_dbl(double d, pi_t *p) { p->m = p->l; p_pre(p); printf("% *.*E ", p->w, 6+p->w-10, d);  p_suf(p); }
+static void p_str(char *s, pi_t *p) { p_pre(p); printf("%*s ", p->w+3, s);  p_suf(p); }
+//static void p_tbl_pre(pi_t *p) { if (p->l) printf("LaTeX table:\n"); else printf("Results:\n");}
+
+
+static double c_res(model_t m, result_t r) {return r.time/(*(m.fp))(r.size);}
 static double O_1(double n) {return 1;}
 static double O_n(double n) {return n;}
 static double O_n2(double n) {return n*n;}
 static double O_n3(double n) {return n*n*n;}
 static double O_n_log_n(double n) {return n*log(n);}
 
-// Long, but splitting it would reduce readability and would not significantly reduce size.
-static void ui_results(result_t *results, int n)
+static model_t* getModels(int *n)
 {
-    int width = 10;
 
     model_t models[] = {
         {O_1,       "O(1)"},
@@ -136,147 +229,139 @@ static void ui_results(result_t *results, int n)
         {O_n2,      "O(n^2)"},
         {O_n3,      "O(n^3)"},
         {log,       "O(log(n))"},
-        {O_n_log_n, "O(n*log(n))"},
+        {O_n_log_n, "O(nlog(n))"},
         {sqrt,      "O(sqrt(n))"},
-    }; int num_models = sizeof(models)/sizeof(models[0]);
-    printf("\nResults:\n\n");
+    }; 
+    *n = sizeof(models)/sizeof(models[0]);
+    return memcpy((model_t*) malloc(sizeof(models)), models, sizeof(models));
+}
 
-    printf("%*s ", width+3, "size"); printf("%*s ", width+3, "size (GB)"); for (int j = 0; j<num_models; j++) { printf("%*s ", width+3, models[j].name); } printf("\n");
+// Long, but splitting it would reduce readability.
+static void ui_results(result_t *results, ac_t ac, int n, bool LaTeX_mode)
+{
 
+    pi_t p = {LaTeX_mode ? 6 : 10, LaTeX_mode};
+    //p_tbl_pre(&p);
+    if (p.l) table_begin();
+    if (p.l) tabular_begin();
+    //if (p.l) printf("LaTeX table:\n");
+    p.e = p.l;
+
+    int num_models;
+    model_t *models = getModels(&num_models);
+    int cols = num_models + 2;
+
+    ui_results_print_header(p, cols);
+    p_str("size",&p); p.s=p.l; p_str("size (GB)",&p); for (int j = 0; j<num_models; j++) { p.m=p.l; p_str(models[j].name,&p); } pln(&p);
     for (int i = 0; i<n; i++)
     {
-        printf("%*d ", width+3, results[i].size);
-        printf("% *f ", width+3, results[i].size*sizeof(int)/1024.0/1024.0/1024.0);
+        p_int(results[i].size,&p);p.s=p.l;
+        p_fix(sizeToGB(results[i].size),&p);
         for (int j = 0; j<num_models; j++) 
         { 
-            double res = results[i].time/(*(models[j].fp))(results[i].size);
+            double res = c_res(models[j], results[i]);
             models[j].avg += res/((double) n);
-            printf("% *e ", width, res); 
-        }
-        printf("\n");
+            p_dbl(res,&p); 
+        }   
+        pln(&p);
     }
-
     for (int j = 0; j<num_models; j++) 
     {
         for (int i = 0; i<n; i++)
-        {
-            double res = results[i].time/(*(models[j].fp))(results[i].size); res -= models[j].avg; res*=res;
+        {   
+            double res = c_res(models[j], results[i]);
+            res -= models[j].avg; res*=res;
             models[j].sd += res/((double) n);
-        }
+        }   
         models[j].sd = sqrt(models[j].sd);
     }
-
-    printf("\n%*s ", width+3, "avg"); printf("%*s ", width+3, ""); 
-    for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].avg); } printf("\n");
-    printf("%*s ", width+3, "sd"); printf("%*s ", width+3, ""); 
-    for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].sd); } printf("\n");
-    printf("%*s ", width+3, "sd/avg"); printf("%*s ", width+3, ""); 
-    for (int j = 0; j<num_models; j++) { printf("% *e ", width, models[j].sd/models[j].avg); } printf("\n");
-
-    model_t minModel = models[0];
-    for (int i = 1; i<num_models; i++) { if ((minModel.sd/minModel.avg)>(models[i].sd/models[i].avg)) minModel = models[i]; }
-
-    printf("\n%*s has the lowest standard deviation per average.\n\n", width+3, minModel.name);
-
+    pln1(&p); p_str("avg",&p); p.s=p.l; p_str("",&p); 
+    for (int j = 0; j<num_models; j++) { p_dbl(models[j].avg,&p); }
+    pln(&p); p_str("sd",&p); p.s=p.l; p_str("",&p); 
+    for (int j = 0; j<num_models; j++) { p_dbl(models[j].sd,&p); }
+    pln(&p); p_str("sd/avg",&p); p.s=p.l; p_str("",&p); 
+    for (int j = 0; j<num_models; j++) { p_dbl(models[j].sd/models[j].avg,&p); }
+    pln(&p);ln();
+    if (p.l) tabular_end();
+    ui_results_print_min_model(models, ac, p, num_models);
+    if (p.l) table_end();
+    free(models);
 }
 
 // Set algorithm and inform user
 static void ui_set_print_algorithm(algorithm_t *a, algorithm_t a_new)
 {
     *a = a_new;    
-    printf("info> "); ui_print_algorithm_full(a_new); 
+    if (ui_info()) ui_print_algorithm_full(a_new); 
 }
 
 // Set algorithm and inform user
 static void ui_set_print_case(case_t *c, case_t c_new)
 {
     *c = c_new;    
-    printf("info> "); ui_print_case_full(c_new); 
+    if (ui_info()) ui_print_case_full(c_new); 
 }
-
 
 //
 // Public
 //
+
 void ui_run()
 {
     bool running, show_menu;
     int result_rows = RESULT_ROWS;
 
-    case_t c = average_t;
-    algorithm_t a = bubble_sort_t;
-
-    //ui_set_print_case(&c,c);
-    //ui_set_print_algorithm(&a,a);
+    ac_t ac = {bubble_sort_t, average_t};
 
     show_menu = true;
     running = true;
 
     int max_num_choices = 1000;
 
-    while (running) {
-        if (show_menu) {
-            show_menu = false;
-            ui_menu(a, c, result_rows);
-        }
+    int start_size = SIZE_START;
 
-        // this allows the user to select multiple things at once
-        char * choices = ui_get_choices(max_num_choices);
+    while (running) {
+        if (show_menu) { show_menu = false; ui_menu(ac.a, ac.c, result_rows, start_size); }
+        char * choices = ui_get_choices(max_num_choices); // allow user to input multiple things at once
         bool keepReadingChoices = true;
+        bool LaTeX_mode = false;
+        bool resetExtraPrints = enableExtraPrints;
         for (int i = 0; i<max_num_choices && keepReadingChoices; i++)
         {
             char choice = choices[i];
             switch (choice) {
                 // House keeping
-                case 'a':
-                    show_menu = true;
-                    break;
-                case 'b':
-                    running = false;
-                    break;
+                case 'a': show_menu = true; break;
+                case 'b': running = false; break;
                 case 'c':
-                    {
-                        result_t result[result_rows];
-                        benchmark(a, c, result, result_rows);
-                        ui_results(result, result_rows);
-                    }
-                    break;
-
-                case 'd': ui_set_print_algorithm(&a,bubble_sort_t); break;
-                case 'e': ui_set_print_algorithm(&a,insertion_sort_t); break;
-                case 'f': ui_set_print_algorithm(&a,quick_sort_t); break;
-                case 'g': ui_set_print_algorithm(&a,linear_search_t); break;
-                case 'h': ui_set_print_algorithm(&a,binary_search_t); break;
-
-                case 'i': ui_set_print_case(&c,best_t); break;
-                case 'j': ui_set_print_case(&c,worst_t); break;
-                case 'k': ui_set_print_case(&c,average_t); break;
-                case 'l': printf("info> "); ui_print_num_rows(++result_rows); break;
-                case 'm': printf("info> "); ui_print_num_rows(--result_rows); break;
-
-                case '\0':
-                          keepReadingChoices = false;
-                          if (i == 0) 
                           {
-                              show_menu = false;
-                              ui_invalid_input();
-                          }
-                          break;
-
-                default:
-                          keepReadingChoices = false;
-                          show_menu = false;
-                          ui_invalid_input();
-                          break;
+                              result_t result[result_rows];
+                              benchmark(ac, result, result_rows, SIZE_START);
+                              ui_results(result, ac, result_rows, LaTeX_mode);
+                          } break;
+                case 'd': ui_set_print_algorithm(&ac.a,bubble_sort_t); break;
+                case 'e': ui_set_print_algorithm(&ac.a,insertion_sort_t); break;
+                case 'f': ui_set_print_algorithm(&ac.a,quick_sort_t); break;
+                case 'g': ui_set_print_algorithm(&ac.a,linear_search_t); break;
+                case 'h': ui_set_print_algorithm(&ac.a,binary_search_t); break;
+                case 'i': ui_set_print_case(&ac.c,best_t); break;
+                case 'j': ui_set_print_case(&ac.c,worst_t); break;
+                case 'k': ui_set_print_case(&ac.c,average_t); break;
+                case 'l': ++result_rows; if (ui_info()) { ui_print_num_rows(result_rows, start_size); } break;
+                case 'm': result_rows = result_rows > 1 ? result_rows-1 : 1; if (ui_info()) { ui_print_num_rows(result_rows, start_size); } break;
+                case 'n': LaTeX_mode = true; enableExtraPrints=false; break;
+                case '\0': keepReadingChoices = false; if (i == 0) { show_menu = false; ui_invalid_input(); } break;
+                default: keepReadingChoices = false; show_menu = false; ui_invalid_input(); break;
             }
         }
+        enableExtraPrints = resetExtraPrints;
         free(choices);
     }
     ui_exit();
 }
 
 
-// only to be used for debug, the user should not ever see the lists
+// only to be used for debug, the end user should never see the lists
 void ui_DEBUG_print_list(int *d, int n)
 {
     if (ui_debug())
@@ -286,11 +371,17 @@ void ui_DEBUG_print_list(int *d, int n)
     }
 }
 
+bool ui_error()
+{
+    if (enableExtraPrints) printf("error> ");
+    return enableExtraPrints; // allways print errors
+}
+
 bool ui_debug()
 {
 #ifdef DEBUG
-    printf("debug> ");
-    return true;
+    if (enableExtraPrints) printf("debug> ");
+    return enableExtraPrints;
 #else
     return false;
 #endif

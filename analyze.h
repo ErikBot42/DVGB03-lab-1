@@ -3,10 +3,7 @@
 
 #include <stdbool.h>
 
-#define SIZE_START 512
-//#define SIZE_START 8
-//#define ITERATIONS 4
-#define ITERATIONS 256
+#define ITERATIONS 32
 
 // algorithm_t defines different algorithms
 typedef enum {
@@ -30,12 +27,16 @@ typedef struct {
 	double time;
 } result_t;
 
+// algorithm and case inside a single struct
+typedef struct {
+    algorithm_t a;
+    case_t c;
+} ac_t;
 
-//void generateSortedList(int *d, int n, bool reverse);
 
 
 // benchmark benchmarks an algorithm a for a specific case c, writing n results
 // to the result buffer buf
-void benchmark(const algorithm_t a, const case_t c, result_t *buf, int n);
+void benchmark(const ac_t ac, result_t *buf, int n, int start_size);
 
 #endif

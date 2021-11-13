@@ -35,20 +35,6 @@ static int binary_search_index(int *a, int n, int v)
     //printf("debug> insert element %d at a[%d] = %d\n", v, first, a[first]);
     return first;
 
-    //while (first <= last){
-    //    middle = (first + last) / 2;
-
-    //    if (a[middle] == v) {
-    //        return middle;
-    //    }
-    //    else if(a[middle] < v){
-    //        first = middle + 1;
-    //    }
-    //    else {
-    //        last = middle - 1;
-    //    }
-    //}
-    //return -1; 
 }
 
 // insert assuming 1 space was allocated after array
@@ -85,7 +71,7 @@ static inline void insertArraySorted(int * a, int n, int el)
 static int partition(int *a, int n)
 {
     int pivot = a[0];
-    int lower = 0;
+    int lower = 1;
     int upper = n - 1;
 
     do
