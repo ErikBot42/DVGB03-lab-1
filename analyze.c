@@ -7,12 +7,22 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 
 
 //
 // Private
 //
 //
+
+// post: swap the value the pointers point to.
+// copied from algorithm.c to make sure algorithm.c remains completely independent.
+static inline void swp (int *a, int *b)
+{
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
 
 // random value with the max size of an int
 // device dependant, could be used to make sure rand() gives enough bits
@@ -61,21 +71,47 @@ static int randomIndex(int list_size)
 	return intRand()%list_size;
 }
 
-static void err_case_not_implemented()
-{
-    if(ui_error()) printf("Case not implemented for this algorithm, using a random list\n");
-}
-
-//static void quickSortBestCase(int *d, int n)
+//static void err_case_not_implemented()
 //{
-//    
+//    if(ui_error()) printf("Case not implemented for this algorithm, using a random list\n");
 //}
+
+// n = 2^k for this to work well, otherwise behavior is undefined
+// because of memcpy, this algorithm is O(n*log(n))
+// produces a best case for quick sort where all elements are unique
+static void quickSortBestCase_rec(int *d, int n)
+{
+    if (n <= 2)
+    {
+        d[0] = 1;
+        d[1] = 2;
+    }
+    else 
+    {
+        int m = n/2;
+        quickSortBestCase_rec(d,m);
+        //memcpy(d+m,d,m);
+        quickSortBestCase_rec(d+m, m);
+
+        for (int i = 0; i<m; i++) d[i] += m;
+    }
+}
+static void quickSortBestCase(int *d, int n)
+{
+    quickSortBestCase_rec(d,n);
+    //int m = n/2;
+    //for (int i = 0; i<m; i++)
+    //{
+    //    swp(d+i,d+n+i-1);
+    //}
+}
 
 // pre: d is a pre allocated buffer of length n && n>0.
 // post: generate apropriate list based on algorithm and case also returns a
 // value to search for if using a search algorithm.
-static int generateTestList(const ac_t ac, int *d, int n)
+static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
 {
+    if (ui_debug()) printf("Generating NEW test list\n");
 	int maxVal = RAND_MAX;//100;
 	int searchIndex = 0;
 	switch(ac.a)
@@ -85,9 +121,11 @@ static int generateTestList(const ac_t ac, int *d, int n)
 			switch(ac.c)
 			{
 				case best_t:
+                    *cache = true;
 					generateSortedList(d,n,false);
 					break;
 				case worst_t:
+                    *cache = true;
 					generateSortedList(d,n,true);
 					break;
 				case average_t:
@@ -99,11 +137,13 @@ static int generateTestList(const ac_t ac, int *d, int n)
             switch(ac.c)
             {
                 case best_t:
-                    err_case_not_implemented();         
-					generateRandomList(d,n,maxVal);
+                    if (ui_debug()) printf("quicksort best case\n");
+                    quickSortBestCase(d,n);
+                    *cache = true;
                     break;
                 case worst_t:
 					generateSortedList(d,n,false);
+                    *cache = true;
                     break;
                 case average_t:
 					generateRandomList(d,n,maxVal);
@@ -111,8 +151,8 @@ static int generateTestList(const ac_t ac, int *d, int n)
             }
 		case binary_search_t:
             // constant in terms of list contents.
-			generateSortedList(d,n,false);
 			searchIndex = randomIndex(n);
+			generateSortedList(d,n,false);
 			break;
 		case linear_search_t:
 			switch(ac.c)
@@ -123,7 +163,7 @@ static int generateTestList(const ac_t ac, int *d, int n)
 				case worst_t:
 					searchIndex = n-1;
 				case average_t:
-					randomIndex(n);
+					searchIndex = randomIndex(n);
 			}
 			generateSortedList(d,n,false);
 			break;
@@ -133,6 +173,7 @@ static int generateTestList(const ac_t ac, int *d, int n)
 //			break;
 	}
 	
+    //if (ui_debug()) printf("index = %d/%d\n", searchIndex, n-1);
 	return d[searchIndex];
 }
 
@@ -199,14 +240,11 @@ bool isSorted(int *d, int n)
 //
 // run a number of benchmarks for a variable size
 //
-// TODO: verify sort/search, search for elements that do not exist 
 void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 {
 	int size = SIZE_START;
 
 	int numTests = ITERATIONS;
-    
-
 
 	for (int i = 0; i<n; i++) // changing size
 	{
@@ -215,7 +253,10 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
         // stack is very limited (about 1 MB), allocating on heap instead.
         if ((RAND_MAX)<size && ui_debug()) printf("LIST SIZE IS GREATER THAN RAND_MAX!\n");
         if (ui_debug()) printf("allocating %d bytes.\n", (int)(size*sizeof(int)));
+
         int *d = (int *) malloc(sizeof(int)*(size));
+        int *d2 = (int *) malloc(sizeof(int)*(size));
+
         if (d == NULL)
         {
             printf("error> %d bytes of memory could not be allocated.\n", (int)(size/sizeof(int)));
@@ -224,10 +265,15 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 		
 		double averageTime = 0;
         bool debug = ui_debug();
+        bool cache = false; // does/should a valid cache list exist?
 		for (int j = 0; j<numTests; j++) // multiple iterations at a given size
 		{
             if (debug) { printf("."); fflush(stdout); }
-			int v = generateTestList(ac,d,size);
+            int v;
+
+            if (cache) memcpy(d,d2,size); // O(n) << O(n*log(n))
+            else v = generateTestList(ac,d,size,&cache);
+            if (cache && j==0) memcpy(d2,d,size);
 			bool searchResult = true;
 
             if (debug) { printf("_"); fflush(stdout); }
@@ -239,7 +285,9 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 		}
         if (debug) printf("\n");
 
+        if (debug) printf("releasing d and d2\n");
         free(d);
+        free(d2);
 
 		buf[i].size = size;
 		buf[i].time = averageTime;

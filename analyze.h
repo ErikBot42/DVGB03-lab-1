@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define ITERATIONS 32
+#define ITERATIONS 16
 
 // algorithm_t defines different algorithms
 typedef enum {

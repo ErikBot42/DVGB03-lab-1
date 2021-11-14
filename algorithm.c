@@ -13,13 +13,13 @@ static inline void swp (int *a, int *b)
     *b = tmp;
 }
 
-//Binary search for index, will return index even if exact value is not found
+// Binary search for index, will return index even if exact value is not found
+// This was made to optimize insertion sort.
 static int binary_search_index(int *a, int n, int v)
 {
     int first = 0;
     int last = n - 1;
     int middle;
-    //ui_DEBUG_print_list(a, n);
     while (first < last)
     {
         middle = (first + last)/2;
@@ -32,7 +32,6 @@ static int binary_search_index(int *a, int n, int v)
             last = middle;
         }
     }
-    //printf("debug> insert element %d at a[%d] = %d\n", v, first, a[first]);
     return first;
 
 }
@@ -47,25 +46,17 @@ static inline void insertArray(int * a, int n, int index, int el)
     }
 }
 
+// insert value into array of length n -> length n+1
 static inline void insertArraySorted(int * a, int n, int el)
 {
-    int k;// = n;
-    //for (int i = 0; i<n; i++)
-    //{
-    //    if (a[i]>el)
-    //    {
-    //        k = i;
-    //        break;
-    //    }
-    //}
-    //printf("debug> a[%d] = %d\n", k, a[k]);
+    int k;
     k = binary_search_index(a, n+1, el);
     insertArray(a, n, k, el);
 }
 
 
-
-//Split array into lower and upper, return middle value 
+// O(n)
+// Split array into lower and upper, return middle value 
 // pre: *a is a list, n is number of elements
 // post: put lower elements to the left and higher to the right and return last index in lower half (possibly negative
 static int partition(int *a, int n)
@@ -107,17 +98,12 @@ void bubble_sort(int *a, int n)
         for (int i = 0; i < n - j; i++) {
             if(a[i] > a[i+1]) {
                 swp(&a[i], &a[i+1]);
-                //int temp = a[i];
-                //a[i] = a[i + 1];
-                //a[i + 1] = temp;
                 sorted = 0;
             }
         }
         if(sorted) return;
     }
 }
-// TODO: done
-//}
 
 // pre: 
 // *a = array
@@ -143,22 +129,10 @@ void quick_sort(int *a, int n);
 
 void quick_sort(int *a, int n)
 {
-    //static int iter = 0;
-    //printf("%d\n", iter++);
-    //fflush(stdout);
-
     if (n <= 1) return;
-
     int b = partition(a, n);
-    //printf("a[%d] = %d, ", b, a[b]); ui_DEBUG_print_list(a, n);
-
-    quick_sort(a, b); //sorts lower to mid
-    quick_sort(a+b+1, n-b-1); 
-
-    //quick_sort(a, tal); //sorts lower to mid
-    //quick_sort(a + tal, n - tal); //sorts mid to end
-
-    // TODO: quick sort
+    quick_sort(a, b);         // lower
+    quick_sort(a+b+1, n-b-1); // upper
 }
 
 bool linear_search(const int *a, int n, int v)
@@ -190,5 +164,5 @@ bool binary_search(const int *a, int n, int v)
             last = middle - 1;
         }
     }
-    return false; // TODO: optimization
+    return false;
 }

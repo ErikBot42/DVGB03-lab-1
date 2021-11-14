@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// NOTE: data analysis is part of ui, but the creation of data is not.
+
 //
 // Private
 //
@@ -23,7 +25,7 @@ static bool ui_info()
 
 static void ui_invalid_input()
 {
-    if (ui_info()) printf("bad input\n");
+    if (ui_info()) printf("bad input, press \'a\' for menu.\n");
 }
 
 static void ui_exit()
@@ -117,7 +119,7 @@ static void ui_menu(algorithm_t a, case_t c, int rows, int start_size)
         "Average case\n",
         "Increase rows",
         "Decrease rows",
-        "Output results as LaTeX table",
+        "LaTeX table output only",
     };
 
     ui_line('=', MENU_WIDTH);
@@ -134,11 +136,11 @@ static double sizeToGB(double size)
     return (size*sizeof(int))/1024.0/1024.0/1024.0;
 }
 
-static void mm(pi_t p) {if (p.l) printf("$");}
+static bool mm(pi_t *p) {if (p->m) printf("$"); return p->m;}
 
 static void table_begin() {printf("\\begin{table}\n\\tabcolsep=0.09cm\n");}
 static void table_end() {printf("\\end{table}\n");}
-static void tabular_begin() {printf("\\begin{tabular}\n");}
+static void tabular_begin() {printf("\\begin{tabular}{c|c|*{30}{c}}\\hline\n");}
 static void tabular_end() {printf("\\end{tabular}\n");}
 
 static void ln()
@@ -149,7 +151,8 @@ static void ln()
 // produces caption for table
 static void ui_results_print_min_model(model_t *models, ac_t ac, pi_t p, int n)
 {
-    ln();
+    p.m = p.l;
+    if (!p.l) ln();
     if (p.l) printf("\\caption{");
     model_t minModel = models[0];
     for (int i = 1; i<n; i++) { if ((minModel.sd/minModel.avg)>(models[i].sd/models[i].avg)) minModel = models[i]; }
@@ -158,12 +161,13 @@ static void ui_results_print_min_model(model_t *models, ac_t ac, pi_t p, int n)
     printf(" case ");
     ui_print_algorithm(ac.a);
     printf(", ");
-    mm(p); printf("%s", minModel.name); mm(p);
-    printf(" has the lowest sd/avg, where sd = standard deviation, avg = average value. ");
+    mm(&p); printf("%s", minModel.name); mm(&p);
+    printf(" has the lowest sd/avg, where sd is the standard deviation and avg is the average value. ");
+    printf("sd/avg is a measure of how varying the values are. ");
     printf("Values are calculated with ");
-    mm(p); printf("time/f(size)"); mm(p);
+    mm(&p); printf("time/f(size)"); mm(&p);
     printf(", where "); 
-    mm(p); printf("f"); mm(p);
+    mm(&p); printf("f"); mm(&p);
     printf(" is the highest order term of the complexity. ");
     if (p.l) printf("This table and caption was automatically generated. ");
     if (p.l) printf("}");
@@ -173,8 +177,8 @@ static void ui_results_print_min_model(model_t *models, ac_t ac, pi_t p, int n)
 // either prints ui header or LaTeX code for table
 static void ui_results_print_header(pi_t p, int cols)
 {
-    ln();
-    if (enableExtraPrints) {
+    if (!p.l) {
+        ln();
         //ui_line('=', MENU_WIDTH);
         ui_line('=', (p.w+4)*cols);
         printf("Results:\n\n");
@@ -204,20 +208,19 @@ static void pln1(pi_t *p)
     pln0(p, false);
 }
 
-static void p_pre(pi_t *p) { if (p->s) printf("&&"); if (p->m) printf("$"); } // print prefix
-static void p_suf(pi_t *p) { if (p->m) printf("$"); p->m = false; } // print suffix
+static void p_pre(pi_t *p) { if (p->s) printf("&"); if(mm(p) && p->n) printf("\\num{"); } // print prefix
+static void p_suf(pi_t *p) { if (p->m && p->n) printf("}"); mm(p); p->m = false; } // print suffix
 static void p_int(int n, pi_t *p) { p->m = p->l; p_pre(p); printf("%*d ", p->w+3, n); p_suf(p); }
 static void p_fix(double d, pi_t *p) { p->m = p->l; p_pre(p); printf("% *f ", p->w+3, d); p_suf(p); }
 static void p_dbl(double d, pi_t *p) { p->m = p->l; p_pre(p); printf("% *.*E ", p->w, 6+p->w-10, d);  p_suf(p); }
 static void p_str(char *s, pi_t *p) { p_pre(p); printf("%*s ", p->w+3, s);  p_suf(p); }
 //static void p_tbl_pre(pi_t *p) { if (p->l) printf("LaTeX table:\n"); else printf("Results:\n");}
 
-
 static double c_res(model_t m, result_t r) {return r.time/(*(m.fp))(r.size);}
 static double O_1(double n) {return 1;}
 static double O_n(double n) {return n;}
 static double O_n2(double n) {return n*n;}
-static double O_n3(double n) {return n*n*n;}
+//static double O_n3(double n) {return n*n*n;}
 static double O_n_log_n(double n) {return n*log(n);}
 
 static model_t* getModels(int *n)
@@ -227,13 +230,67 @@ static model_t* getModels(int *n)
         {O_1,       "O(1)"},
         {O_n,       "O(n)"},
         {O_n2,      "O(n^2)"},
-        {O_n3,      "O(n^3)"},
+        //{O_n3,      "O(n^3)"},
         {log,       "O(log(n))"},
         {O_n_log_n, "O(nlog(n))"},
-        {sqrt,      "O(sqrt(n))"},
+        //{sqrt,      "O(sqrt(n))"},
     }; 
     *n = sizeof(models)/sizeof(models[0]);
     return memcpy((model_t*) malloc(sizeof(models)), models, sizeof(models));
+}
+
+// perform linear regression to get slope.
+// pre: n>=2, sorted
+// https://en.wikipedia.org/wiki/Simple_linear_regression#Fitting_the_regression_line
+// O(n) | n is a constant => O(1)
+static double linearRegression(double (*points)[2], int n)
+{
+    double dn = (double)n;
+    double s_x, s_y, s_xy, s_x2;
+    for (int i = 0; i<n; i++)
+    {
+        s_x+=points[i][0];
+        s_y+=points[i][1];
+        s_x2+=points[i][0]*points[i][0];
+        s_xy+=points[i][0]*points[i][1];
+    }
+
+    //double a_x = s_x/dn;
+    //double a_y = s_y/dn;
+
+    //double t_1 = s_x2 - s_x * a_x;
+    //double t_2 = s_xy - s_x * a_x;
+    //return t_2/t_1;
+    return (dn*s_xy-s_x*s_y)/(dn*s_x2*s_x*s_x);
+
+}
+
+// fill the model struct
+static void calcModelData(model_t *m, result_t *r, int ms, int rs)
+{
+    for (int j = 0; j<ms; j++) 
+    {
+        double points[rs][2]; // for linear regression
+        //points[0][0] = 0;
+        //points[0][1] = 0;
+        //points[1][0] = 1;
+        //points[1][1] = .1;
+        for (int i = 0; i<rs; i++)
+        {   
+            double res = c_res(m[j], r[i]);
+
+            m[j].avg += res/((double) rs);
+            
+            points[i][0] = r[i].size;
+            points[i][1] = res;
+
+            double err = res - m[j].avg; 
+            double squared = err*err;
+            m[j].sd += squared/((double) rs);
+        }   
+        m[j].k = linearRegression(points, rs);
+        m[j].sd = sqrt(m[j].sd);
+    }
 }
 
 // Long, but splitting it would reduce readability.
@@ -252,41 +309,47 @@ static void ui_results(result_t *results, ac_t ac, int n, bool LaTeX_mode)
     int cols = num_models + 2;
 
     ui_results_print_header(p, cols);
-    p_str("size",&p); p.s=p.l; p_str("size (GB)",&p); for (int j = 0; j<num_models; j++) { p.m=p.l; p_str(models[j].name,&p); } pln(&p);
+    p_str("size",&p); p.s=p.l; p_str("size (GB)",&p); for (int j = 0; j<num_models; j++) { p.m=p.l; p_str(models[j].name,&p); } pln(&p); 
+    p.n = true;
     for (int i = 0; i<n; i++)
     {
         p_int(results[i].size,&p);p.s=p.l;
         p_fix(sizeToGB(results[i].size),&p);
         for (int j = 0; j<num_models; j++) 
         { 
-            double res = c_res(models[j], results[i]);
-            models[j].avg += res/((double) n);
+            double res = c_res(models[j],results[i]);
             p_dbl(res,&p); 
         }   
         pln(&p);
     }
-    for (int j = 0; j<num_models; j++) 
-    {
-        for (int i = 0; i<n; i++)
-        {   
-            double res = c_res(models[j], results[i]);
-            res -= models[j].avg; res*=res;
-            models[j].sd += res/((double) n);
-        }   
-        models[j].sd = sqrt(models[j].sd);
-    }
+    calcModelData(models,results,num_models,n);
+    //for (int j = 0; j<num_models; j++) 
+    //{
+    //    for (int i = 0; i<n; i++)
+    //    {   
+    //        double res = c_res(models[j], results[i]);
+    //        res -= models[j].avg; res*=res;
+    //        models[j].sd += res/((double) n);
+    //    }   
+    //    models[j].sd = sqrt(models[j].sd);
+    //}
     pln1(&p); p_str("avg",&p); p.s=p.l; p_str("",&p); 
     for (int j = 0; j<num_models; j++) { p_dbl(models[j].avg,&p); }
     pln(&p); p_str("sd",&p); p.s=p.l; p_str("",&p); 
     for (int j = 0; j<num_models; j++) { p_dbl(models[j].sd,&p); }
+    pln(&p); p_str("k",&p); p.s=p.l; p_str("",&p); 
+    for (int j = 0; j<num_models; j++) { p_dbl(models[j].k,&p); }
     pln(&p); p_str("sd/avg",&p); p.s=p.l; p_str("",&p); 
     for (int j = 0; j<num_models; j++) { p_dbl(models[j].sd/models[j].avg,&p); }
-    pln(&p);ln();
+    pln(&p); p_str("k/avg",&p); p.s=p.l; p_str("",&p); 
+    for (int j = 0; j<num_models; j++) { p_dbl(models[j].k/models[j].avg,&p); }
+    pln(&p);
     if (p.l) tabular_end();
     ui_results_print_min_model(models, ac, p, num_models);
     if (p.l) table_end();
     free(models);
 }
+
 
 // Set algorithm and inform user
 static void ui_set_print_algorithm(algorithm_t *a, algorithm_t a_new)
@@ -337,7 +400,8 @@ void ui_run()
                           {
                               result_t result[result_rows];
                               benchmark(ac, result, result_rows, SIZE_START);
-                              ui_results(result, ac, result_rows, LaTeX_mode);
+                              ui_results(result, ac, result_rows, true);
+                              if (!LaTeX_mode) ui_results(result, ac, result_rows, false);
                           } break;
                 case 'd': ui_set_print_algorithm(&ac.a,bubble_sort_t); break;
                 case 'e': ui_set_print_algorithm(&ac.a,insertion_sort_t); break;

@@ -3,12 +3,12 @@
 
 #include <stdbool.h>
 
-#define MENU_WIDTH 40
+#define MENU_WIDTH 45
 #define RESULT_ROWS 7
 #define SIZE_START 512
 
 
-//#define DEBUG
+#define DEBUG
 
 
 void ui_DEBUG_print_list(int *d, int n); // FOR DEBUG ONLY
@@ -21,6 +21,7 @@ typedef struct {
     char * name;
     double avg;
     double sd;
+    double k;
 } model_t;
 
 // print info
@@ -30,6 +31,7 @@ typedef struct {
     bool s; // prefix &&
     bool e; // add "\\\\\\hline"
     bool m; // add $ before and after
+    bool n; // add \num
 } pi_t;
 
 bool ui_debug();
