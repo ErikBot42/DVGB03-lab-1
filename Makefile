@@ -1,7 +1,7 @@
 .PHONY: clean tidy
 
 CC=gcc
-CFLAGS=-Wall -Werror -std=c99
+CFLAGS=-Wall -Werror -std=gnu99
 LFLAGS=-lm
 HDR=$(wildcard *.h)
 SRC=$(filter-out $(wildcard *_test.c), $(wildcard *.c))

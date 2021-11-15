@@ -228,12 +228,12 @@ static model_t* getModels(int *n)
 
     model_t models[] = {
         {O_1,       "O(1)"},
+        {log,       "O(log(n))"},
+        //{sqrt,      "O(sqrt(n))"},
         {O_n,       "O(n)"},
+        {O_n_log_n, "O(nlog(n))"},
         {O_n2,      "O(n^2)"},
         //{O_n3,      "O(n^3)"},
-        {log,       "O(log(n))"},
-        {O_n_log_n, "O(nlog(n))"},
-        //{sqrt,      "O(sqrt(n))"},
     }; 
     *n = sizeof(models)/sizeof(models[0]);
     return memcpy((model_t*) malloc(sizeof(models)), models, sizeof(models));

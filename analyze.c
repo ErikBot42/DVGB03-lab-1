@@ -9,6 +9,9 @@
 #include <math.h>
 #include <string.h>
 
+#define USE_POSIX_COMPLIANT
+
+
 
 //
 // Private
@@ -151,7 +154,18 @@ static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
             }
 		case binary_search_t:
             // constant in terms of list contents.
-			searchIndex = randomIndex(n);
+            switch(ac.c)
+            {
+                case best_t:
+                    searchIndex = (n-1)/2;
+                    break;
+                case worst_t:
+                    searchIndex = 0;
+                    break;
+                case average_t:
+                    searchIndex = randomIndex(n);
+                    break;
+            }
 			generateSortedList(d,n,false);
 			break;
 		case linear_search_t:
@@ -185,8 +199,12 @@ static double runTimedBenchmark(const algorithm_t a, int *d, int n, int v, bool*
 		srand((unsigned) time(&t));	
 	}
 
-	
-	clock_t t = clock();
+#ifndef USE_POSIX_COMPLIANT	
+    clock_t t = clock();
+#else
+    struct timespec before;
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &before);
+#endif 
 	
 	// the overhead from the switch is assumed to be completely negligable.
 	switch(a)
@@ -208,9 +226,19 @@ static double runTimedBenchmark(const algorithm_t a, int *d, int n, int v, bool*
 			break;
 	}
 
+#ifndef USE_POSIX_COMPLIANT
 	clock_t t2 = clock();
-
 	return ((double)(t2-t))/CLOCKS_PER_SEC;;
+#else
+    struct timespec after;
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &after);
+    double ndiff = (after.tv_nsec-before.tv_nsec);
+    double sdiff = (after.tv_sec-before.tv_sec);
+    return (ndiff/(1E9))+sdiff; // nanosecond->second
+
+#endif
+
+
 
 }
 
