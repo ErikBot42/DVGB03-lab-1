@@ -151,18 +151,20 @@ bool binary_search(const int *a, int n, int v)
     int last = n - 1;
     int middle;
 
-    while (first <= last){
+    while (first <= last)
+		{
         middle = (first + last) / 2;
 
-        if (a[middle] == v) {
-            return true;
-        }
-        else if(a[middle] < v){
+    	  if(a[middle] < v)
+				{
             first = middle + 1;
         }
-        else {
+        else if (a[middle] > v)
+				{
             last = middle - 1;
         }
+				else
+					return true;
     }
     return false;
 }
