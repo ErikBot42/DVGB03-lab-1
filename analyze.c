@@ -49,6 +49,7 @@ static inline int intRand()
 // generate sorted list with elements [0,n-1] or [n-1,0] if reverse is true.
 static void generateSortedList(int *d, int n, bool reverse)
 {
+    if (ui_debug()) printf("NEW sorted list\n");
 	for (int i = 0; i<n; i++)
 	{
 		if (!reverse)
@@ -99,14 +100,28 @@ static void quickSortBestCase_rec(int *d, int n)
         for (int i = 0; i<m; i++) d[i] += m;
     }
 }
+
 static void quickSortBestCase(int *d, int n)
 {
-    quickSortBestCase_rec(d,n);
-    //int m = n/2;
-    //for (int i = 0; i<m; i++)
-    //{
-    //    swp(d+i,d+n+i-1);
-    //}
+    static int *d_cached = NULL;
+    static int n_cached = 0;
+    if (d_cached != NULL)
+    {
+        if (n_cached == n)
+        {
+            memcpy(d, d_cached, n);
+            return;
+        }
+        free(d_cached);
+        d_cached = NULL;
+    }
+    else
+    {
+        quickSortBestCase_rec(d,n);
+        d_cached = (int*) malloc(sizeof(int)*n);
+        memcpy(d_cached, d, n);
+        n_cached = n;
+    }
 }
 
 // pre: d is a pre allocated buffer of length n && n>0.
@@ -114,7 +129,7 @@ static void quickSortBestCase(int *d, int n)
 // value to search for if using a search algorithm.
 static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
 {
-    if (ui_debug()) printf("Generating NEW test list\n");
+    //if (ui_debug()) printf("Generating NEW test list\n");
 	int maxVal = RAND_MAX;//100;
 	int searchIndex = 0;
 	switch(ac.a)
@@ -124,11 +139,10 @@ static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
 			switch(ac.c)
 			{
 				case best_t:
+					if (!*cache) generateSortedList(d,n,false);
                     *cache = true;
-					generateSortedList(d,n,false);
 					break;
 				case worst_t:
-                    *cache = true;
 					generateSortedList(d,n,true);
 					break;
 				case average_t:
@@ -140,12 +154,11 @@ static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
             switch(ac.c)
             {
                 case best_t:
-                    if (ui_debug()) printf("quicksort best case\n");
+                    //if (ui_debug()) printf("quicksort best case\n");
                     quickSortBestCase(d,n);
-                    *cache = true;
                     break;
                 case worst_t:
-					generateSortedList(d,n,false);
+					if (!*cache) generateSortedList(d,n,false);
                     *cache = true;
                     break;
                 case average_t:
@@ -166,7 +179,8 @@ static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
                     searchIndex = randomIndex(n);
                     break;
             }
-			generateSortedList(d,n,false);
+			if (!*cache) generateSortedList(d,n,false);
+            *cache = true;
 			break;
 		case linear_search_t:
 			switch(ac.c)
@@ -179,7 +193,8 @@ static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
 				case average_t:
 					searchIndex = randomIndex(n);
 			}
-			generateSortedList(d,n,false);
+			if (!*cache) generateSortedList(d,n,false);
+            *cache = true;
 			break;
 //		default:
 //            err_case_not_implemented();         
@@ -270,9 +285,11 @@ bool isSorted(int *d, int n)
 //
 void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 {
-	int size = SIZE_START;
 
-	int numTests = ITERATIONS;
+    bool isSearchingAlgorithm = ac.a == linear_search_t || ac.a == binary_search_t;
+
+	int size = SIZE_START;
+	int numTests = isSearchingAlgorithm ? ITERATIONS_SEARCH : ITERATIONS;
 
 	for (int i = 0; i<n; i++) // changing size
 	{
@@ -283,7 +300,7 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
         if (ui_debug()) printf("allocating %d bytes.\n", (int)(size*sizeof(int)));
 
         int *d = (int *) malloc(sizeof(int)*(size));
-        int *d2 = (int *) malloc(sizeof(int)*(size));
+        //int *d2 = (int *) malloc(sizeof(int)*(size));
 
         if (d == NULL)
         {
@@ -293,15 +310,16 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 		
 		double averageTime = 0;
         bool debug = ui_debug();
-        bool cache = false; // does/should a valid cache list exist?
+        bool cache = false; // should old list be reused?
 		for (int j = 0; j<numTests; j++) // multiple iterations at a given size
 		{
             if (debug) { printf("."); fflush(stdout); }
             int v;
 
-            if (cache) memcpy(d,d2,size); // O(n) << O(n*log(n))
-            else v = generateTestList(ac,d,size,&cache);
-            if (cache && j==0) memcpy(d2,d,size);
+            //if (cache) memcpy(d,d2,size); // O(n) << O(n*log(n))
+            //if (!cache) 
+            v = generateTestList(ac,d,size,&cache);
+            //if (cache && j==0) memcpy(d2,d,size);
 			bool searchResult = true;
 
             if (debug) { printf("_"); fflush(stdout); }
@@ -313,9 +331,9 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 		}
         if (debug) printf("\n");
 
-        if (debug) printf("releasing d and d2\n");
+        if (debug) printf("releasing d\n");
         free(d);
-        free(d2);
+        //free(d2);
 
 		buf[i].size = size;
 		buf[i].time = averageTime;

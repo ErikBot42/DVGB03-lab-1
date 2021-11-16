@@ -4,6 +4,8 @@
 #include <stdbool.h>
 
 #define ITERATIONS 16
+#define ITERATIONS_SEARCH (ITERATIONS*8)
+//#define ITERATIONS_SEARCH 1
 
 // algorithm_t defines different algorithms
 typedef enum {

@@ -112,11 +112,20 @@ void bubble_sort(int *a, int n)
 // *a is sorted
 void insertion_sort(int *a, int n)
 {
-    int sorted_elements = 0;
-    for (int i = 0; i<n; i++)
+    //int sorted_elements = 0;
+    //for (int i = 0; i<n; i++)
+    //{
+    //    //ui_DEBUG_print_list(a,n);
+    //    insertArraySorted(a, sorted_elements++, a[i]);
+    //}
+    for (int i = 1; i<n; i++)
     {
-        //ui_DEBUG_print_list(a,n);
-        insertArraySorted(a, sorted_elements++, a[i]);
+        int j = i;
+        while (j>0 && a[j-1]>a[j])
+        {
+            swp(&a[j], &a[j-1]);
+            j--;
+        }
     }
 }
 
