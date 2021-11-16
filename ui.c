@@ -216,7 +216,6 @@ static void p_dbl(double d, pi_t *p) { p->m = p->l; p_pre(p); printf("% *.*E ", 
 static void p_str(char *s, pi_t *p) { p_pre(p); printf("%*s ", p->w+3, s);  p_suf(p); }
 //static void p_tbl_pre(pi_t *p) { if (p->l) printf("LaTeX table:\n"); else printf("Results:\n");}
 
-static double c_res(model_t m, result_t r) {return r.time/(*(m.fp))(r.size);}
 static double O_1(double n) {return 1;}
 static double O_n(double n) {return n;}
 static double O_n2(double n) {return n*n;}
@@ -239,59 +238,7 @@ static model_t* getModels(int *n)
     return memcpy((model_t*) malloc(sizeof(models)), models, sizeof(models));
 }
 
-// perform linear regression to get slope.
-// pre: n>=2, sorted
-// https://en.wikipedia.org/wiki/Simple_linear_regression#Fitting_the_regression_line
-// O(n) | n is a constant => O(1)
-static double linearRegression(double (*points)[2], int n)
-{
-    double dn = (double)n;
-    double s_x, s_y, s_xy, s_x2;
-    for (int i = 0; i<n; i++)
-    {
-        s_x+=points[i][0];
-        s_y+=points[i][1];
-        s_x2+=points[i][0]*points[i][0];
-        s_xy+=points[i][0]*points[i][1];
-    }
 
-    //double a_x = s_x/dn;
-    //double a_y = s_y/dn;
-
-    //double t_1 = s_x2 - s_x * a_x;
-    //double t_2 = s_xy - s_x * a_x;
-    //return t_2/t_1;
-    return (dn*s_xy-s_x*s_y)/(dn*s_x2*s_x*s_x);
-
-}
-
-// fill the model struct
-static void calcModelData(model_t *m, result_t *r, int ms, int rs)
-{
-    for (int j = 0; j<ms; j++) 
-    {
-        double points[rs][2]; // for linear regression
-        //points[0][0] = 0;
-        //points[0][1] = 0;
-        //points[1][0] = 1;
-        //points[1][1] = .1;
-        for (int i = 0; i<rs; i++)
-        {   
-            double res = c_res(m[j], r[i]);
-
-            m[j].avg += res/((double) rs);
-            
-            points[i][0] = r[i].size;
-            points[i][1] = res;
-
-            double err = res - m[j].avg; 
-            double squared = err*err;
-            m[j].sd += squared/((double) rs);
-        }   
-        m[j].k = linearRegression(points, rs);
-        m[j].sd = sqrt(m[j].sd);
-    }
-}
 
 // Long, but splitting it would reduce readability.
 static void ui_results(result_t *results, ac_t ac, int n, bool LaTeX_mode)

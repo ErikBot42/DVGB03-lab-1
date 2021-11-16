@@ -349,5 +349,58 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 }
 
 
+// perform linear regression to get slope.
+// pre: n>=2, sorted
+// https://en.wikipedia.org/wiki/Simple_linear_regression#Fitting_the_regression_line
+// O(n) | n is a constant => O(1)
+double linearRegression(double (*points)[2], int n)
+{
+    double dn = (double)n;
+    double s_x, s_y, s_xy, s_x2;
+    for (int i = 0; i<n; i++)
+    {
+        s_x+=points[i][0];
+        s_y+=points[i][1];
+        s_x2+=points[i][0]*points[i][0];
+        s_xy+=points[i][0]*points[i][1];
+    }
 
+    //double a_x = s_x/dn;
+    //double a_y = s_y/dn;
 
+    //double t_1 = s_x2 - s_x * a_x;
+    //double t_2 = s_xy - s_x * a_x;
+    //return t_2/t_1;
+    return (dn*s_xy-s_x*s_y)/(dn*s_x2*s_x*s_x);
+
+}
+
+double c_res(model_t m, result_t r) {return r.time/(*(m.fp))(r.size);}
+
+// fill the model struct
+void calcModelData(model_t *m, result_t *r, int ms, int rs)
+{
+    for (int j = 0; j<ms; j++) 
+    {
+        double points[rs][2]; // for linear regression
+        //points[0][0] = 0;
+        //points[0][1] = 0;
+        //points[1][0] = 1;
+        //points[1][1] = .1;
+        for (int i = 0; i<rs; i++)
+        {   
+            double res = c_res(m[j], r[i]);
+
+            m[j].avg += res/((double) rs);
+            
+            points[i][0] = r[i].size;
+            points[i][1] = res;
+
+            double err = res - m[j].avg; 
+            double squared = err*err;
+            m[j].sd += squared/((double) rs);
+        }   
+        m[j].k = linearRegression(points, rs);
+        m[j].sd = sqrt(m[j].sd);
+    }
+}

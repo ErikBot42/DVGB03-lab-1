@@ -8,7 +8,7 @@
 #define SIZE_START 512
 
 
-#define DEBUG
+//#define DEBUG
 
 
 void ui_DEBUG_print_list(int *d, int n); // FOR DEBUG ONLY
@@ -16,13 +16,6 @@ void ui_DEBUG_print_list(int *d, int n); // FOR DEBUG ONLY
 // ui_run starts a terminal-based user interface
 void ui_run();
 
-typedef struct {
-    double (*fp) (double);
-    char * name;
-    double avg;
-    double sd;
-    double k;
-} model_t;
 
 // print info
 typedef struct {
