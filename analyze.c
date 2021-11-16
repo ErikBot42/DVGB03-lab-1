@@ -81,23 +81,29 @@ static int randomIndex(int list_size)
 //}
 
 // n = 2^k for this to work well, otherwise behavior is undefined
-// because of memcpy, this algorithm is O(n*log(n))
+// because of data reuse, this algorithm is O(n*log(n))
 // produces a best case for quick sort where all elements are unique
 static void quickSortBestCase_rec(int *d, int n)
 {
     if (n <= 2)
     {
-        d[0] = 1;
-        d[1] = 2;
+        d[0] = 2;
+        d[1] = 1;
     }
     else 
     {
         int m = n/2;
-        quickSortBestCase_rec(d,m);
+        quickSortBestCase_rec(d+m,m);
         //memcpy(d+m,d,m);
-        quickSortBestCase_rec(d+m, m);
-
-        for (int i = 0; i<m; i++) d[i] += m;
+        //quickSortBestCase_rec(d+m, m);
+        
+        // add, reverse and put in front
+        //for (int i = 0; i<m; i++) d[i] += m;
+        for (int i = 0; i<m; i++)
+        {
+            int j = (n-1)-i;
+            d[i] = d[j] + m;
+        }
     }
 }
 
