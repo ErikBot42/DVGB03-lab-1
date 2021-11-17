@@ -49,7 +49,6 @@ static inline int intRand()
 // generate sorted list with elements [0,n-1] or [n-1,0] if reverse is true.
 static void generateSortedList(int *d, int n, bool reverse)
 {
-    if (ui_debug()) printf("NEW sorted list\n");
 	for (int i = 0; i<n; i++)
 	{
 		if (!reverse)
