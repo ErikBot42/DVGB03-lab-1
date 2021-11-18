@@ -49,29 +49,29 @@ static inline int intRand()
 // generate sorted list with elements [0,n-1] or [n-1,0] if reverse is true.
 static void generateSortedList(int *d, int n, bool reverse)
 {
-	for (int i = 0; i<n; i++)
-	{
-		if (!reverse)
-			d[i] = i;
-		else
-			d[i] = n-i-1;
-	}
+    for (int i = 0; i<n; i++)
+    {
+        if (!reverse)
+            d[i] = i;
+        else
+            d[i] = n-i-1;
+    }
 }
 
 // pre: srand() has been run at some point.
 // post: [0,maxValue]
 static void generateRandomList(int *d, int n, int maxValue)
 {
-	for (int i = 0; i<n; i++)
-	{
-		d[i] = intRand()%(maxValue+1);
-	}
+    for (int i = 0; i<n; i++)
+    {
+        d[i] = intRand()%(maxValue+1);
+    }
 }
 
 
 static int randomIndex(int list_size)
 {
-	return intRand()%list_size;
+    return intRand()%list_size;
 }
 
 //static void err_case_not_implemented()
@@ -95,7 +95,7 @@ static void quickSortBestCase_rec(int *d, int n)
         quickSortBestCase_rec(d+m,m);
         //memcpy(d+m,d,m);
         //quickSortBestCase_rec(d+m, m);
-        
+
         // add, reverse and put in front
         //for (int i = 0; i<m; i++) d[i] += m;
         for (int i = 0; i<m; i++)
@@ -106,26 +106,41 @@ static void quickSortBestCase_rec(int *d, int n)
     }
 }
 
+
+// pre: n=k^2 && n>0 | k = positive integer
 static void quickSortBestCase(int *d, int n)
 {
-    static int *d_cached = NULL;
-    static int n_cached = 0;
+
+    static int *d_cached = NULL; // cached list
+    static int n_cached = 0; // num of elements in cache
+
+    // check if cache valid, if not remove it.
     if (d_cached != NULL)
     {
         if (n_cached == n)
         {
-            memcpy(d, d_cached, n);
+            memcpy(d, d_cached, n*sizeof(int));
             return;
         }
-        free(d_cached);
-        d_cached = NULL;
+        else
+        {
+            free(d_cached);
+            d_cached = NULL;
+            n_cached = 0;
+        }
     }
-    else
+
+    if (d_cached == NULL)
     {
+        if (ui_debug()) printf("NEW LIST!!! \n");
         quickSortBestCase_rec(d,n);
-        d_cached = (int*) malloc(sizeof(int)*n);
-        memcpy(d_cached, d, n);
-        n_cached = n;
+
+        if (true) // should values be cached?
+        {
+            d_cached = (int*) malloc(sizeof(int)*n);
+            memcpy(d_cached, d, n*sizeof(int));
+            n_cached = n;
+        }
     }
 }
 
@@ -135,26 +150,26 @@ static void quickSortBestCase(int *d, int n)
 static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
 {
     //if (ui_debug()) printf("Generating NEW test list\n");
-	int maxVal = RAND_MAX;//100;
-	int searchIndex = 0;
-	switch(ac.a)
-	{
-		case bubble_sort_t:
+    int maxVal = RAND_MAX;//100;
+    int searchIndex = 0;
+    switch(ac.a)
+    {
+        case bubble_sort_t:
         case insertion_sort_t:
-			switch(ac.c)
-			{
-				case best_t:
-					if (!*cache) generateSortedList(d,n,false);
+            switch(ac.c)
+            {
+                case best_t:
+                    if (!*cache) generateSortedList(d,n,false);
                     *cache = true;
-					break;
-				case worst_t:
-					generateSortedList(d,n,true);
-					break;
-				case average_t:
-					generateRandomList(d,n,maxVal);
-					break;
-			}
-			break;
+                    break;
+                case worst_t:
+                    generateSortedList(d,n,true);
+                    break;
+                case average_t:
+                    generateRandomList(d,n,maxVal);
+                    break;
+            }
+            break;
         case quick_sort_t:
             switch(ac.c)
             {
@@ -163,14 +178,15 @@ static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
                     quickSortBestCase(d,n);
                     break;
                 case worst_t:
-					if (!*cache) generateSortedList(d,n,false);
+                    if (!*cache) generateSortedList(d,n,false);
                     *cache = true;
                     break;
                 case average_t:
-					generateRandomList(d,n,maxVal);
+                    generateRandomList(d,n,maxVal);
                     break;
             }
-		case binary_search_t:
+            break;
+        case binary_search_t:
             // constant in terms of list contents.
             switch(ac.c)
             {
@@ -184,71 +200,62 @@ static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
                     searchIndex = randomIndex(n);
                     break;
             }
-			if (!*cache) generateSortedList(d,n,false);
+            if (!*cache) generateSortedList(d,n,false);
             *cache = true;
-			break;
-		case linear_search_t:
-			switch(ac.c)
-			{
-				case best_t:
-					searchIndex = 0;
-					break;
-				case worst_t:
-					searchIndex = n-1;
-				case average_t:
-					searchIndex = randomIndex(n);
-			}
-			if (!*cache) generateSortedList(d,n,false);
+            break;
+        case linear_search_t:
+            switch(ac.c)
+            {
+                case best_t:
+                    searchIndex = 0;
+                    break;
+                case worst_t:
+                    searchIndex = n-1;
+                case average_t:
+                    searchIndex = randomIndex(n);
+            }
+            if (!*cache) generateSortedList(d,n,false);
             *cache = true;
-			break;
-//		default:
-//            err_case_not_implemented();         
-//			generateRandomList(d,n,maxVal);
-//			break;
-	}
-	
+            break;
+            //        default:
+            //            err_case_not_implemented();         
+            //            generateRandomList(d,n,maxVal);
+            //            break;
+    }
+
     //if (ui_debug()) printf("index = %d/%d\n", searchIndex, n-1);
-	return d[searchIndex];
+    return d[searchIndex];
 }
 
 static double runTimedBenchmark(const algorithm_t a, int *d, int n, int v, bool* searchResult)
 {
-	// function pointers was decided against to make it possible to test both sorting and searching in a single function.
-	{
-		time_t t;
-		srand((unsigned) time(&t));	
-	}
+    // function pointers was decided against to make it possible to test both sorting and searching in a single function.
+    {
+        time_t t;
+        srand((unsigned) time(&t));    
+    }
 
-#ifndef USE_POSIX_COMPLIANT	
+#ifndef USE_POSIX_COMPLIANT    
     clock_t t = clock();
 #else
     struct timespec before;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &before);
 #endif 
-	
-	// the overhead from the switch is assumed to be completely negligable.
-	switch(a)
-	{
-		case bubble_sort_t:
-			bubble_sort(d, n);
-			break;
-		case insertion_sort_t:
-			insertion_sort(d, n);
-			break;
-		case quick_sort_t:
-			quick_sort(d, n);
-			break;
-		case linear_search_t:
-			*searchResult = linear_search(d, n, v);
-			break;
-		case binary_search_t:
-			*searchResult = binary_search(d, n, v);
-			break;
-	}
+
+    // the overhead from the switch is assumed to be completely negligable.
+    switch(a)
+    {
+
+        case bubble_sort_t: bubble_sort(d, n); break; 
+        case insertion_sort_t: insertion_sort(d, n); break; 
+        case quick_sort_t: quick_sort(d, n); break; 
+        case linear_search_t: *searchResult = linear_search(d, n, v); break; 
+        case binary_search_t: *searchResult = binary_search(d, n, v); break; 
+    }
 
 #ifndef USE_POSIX_COMPLIANT
-	clock_t t2 = clock();
-	return ((double)(t2-t))/CLOCKS_PER_SEC;;
+    clock_t t2 = clock();
+    return ((double)(t2-t))/CLOCKS_PER_SEC;;
 #else
     struct timespec after;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &after);
@@ -264,14 +271,14 @@ static double runTimedBenchmark(const algorithm_t a, int *d, int n, int v, bool*
 
 bool isSorted(int *d, int n)
 {
-	for (int i = 0; i<n-1; i++)
-	{
-		if (d[i]>d[i+1])
-		{
-			return false;
-		}
-	}
-	return true;
+    for (int i = 0; i<n-1; i++)
+    {
+        if (d[i]>d[i+1])
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 //
@@ -293,13 +300,13 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 
     bool isSearchingAlgorithm = ac.a == linear_search_t || ac.a == binary_search_t;
 
-	int size = SIZE_START;
-	int numTests = isSearchingAlgorithm ? ITERATIONS_SEARCH : ITERATIONS;
+    int size = SIZE_START;
+    int numTests = isSearchingAlgorithm ? ITERATIONS_SEARCH : ITERATIONS;
 
-	for (int i = 0; i<n; i++) // changing size
-	{
-		//int d[size];
-        
+    for (int i = 0; i<n; i++) // changing size
+    {
+        //int d[size];
+
         // stack is very limited (about 1 MB), allocating on heap instead.
         if ((RAND_MAX)<size && ui_debug()) printf("LIST SIZE IS GREATER THAN RAND_MAX!\n");
         if (ui_debug()) printf("allocating %d bytes.\n", (int)(size*sizeof(int)));
@@ -312,39 +319,42 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
             printf("error> %d bytes of memory could not be allocated.\n", (int)(size/sizeof(int)));
             break;
         }
-		
-		double averageTime = 0;
+
+        double averageTime = 0;
         bool debug = ui_debug();
         bool cache = false; // should old list be reused?
-		for (int j = 0; j<numTests; j++) // multiple iterations at a given size
-		{
+        for (int j = 0; j<numTests; j++) // multiple iterations at a given size
+        {
             if (debug) { printf("."); fflush(stdout); }
             int v;
 
             //if (cache) memcpy(d,d2,size); // O(n) << O(n*log(n))
             //if (!cache) 
             v = generateTestList(ac,d,size,&cache);
+            //if (debug) {ui_DEBUG_print_list(d, size); printf("\n\n\n");}
+            //if (debug && isSorted(d, size)) {fflush(stdout); printf("INPUT LIST (%d elements) IS ALREADY SORTED!!!", size); exit(1);}
             //if (cache && j==0) memcpy(d2,d,size);
-			bool searchResult = true;
+            bool searchResult = true;
 
             if (debug) { printf("_"); fflush(stdout); }
-			averageTime += runTimedBenchmark(ac.a,d,size,v,&searchResult)/((double)numTests);
+            averageTime += runTimedBenchmark(ac.a,d,size,v,&searchResult)/((double)numTests);
 
-			if (!isSorted(d, size)) printf("error> LIST WAS NOT SORTED!\n");
-			if (!searchResult) printf("error> ALGORITHM COULD NOT FIND ELEMENT!\n");
+            //TODO: UI ERR
+            if (!isSorted(d, size)) printf("error> LIST WAS NOT SORTED!\n");
+            if (!searchResult) printf("error> ALGORITHM COULD NOT FIND ELEMENT!\n");
 
-		}
+        }
         if (debug) printf("\n");
 
         if (debug) printf("releasing d\n");
         free(d);
         //free(d2);
 
-		buf[i].size = size;
-		buf[i].time = averageTime;
+        buf[i].size = size;
+        buf[i].time = averageTime;
 
-		size *= 2;
-	}
+        size *= 2;
+    }
 }
 
 
@@ -391,7 +401,7 @@ void calcModelData(model_t *m, result_t *r, int ms, int rs)
             double res = c_res(m[j], r[i]);
 
             m[j].avg += res/((double) rs);
-            
+
             points[i][0] = r[i].size;
             points[i][1] = res;
 

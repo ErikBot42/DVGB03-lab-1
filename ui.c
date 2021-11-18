@@ -328,7 +328,7 @@ static void ui_set_print_case(case_t *c, case_t c_new)
 void ui_run()
 {
     bool extraPrints = true;
-    enableExtraPrints(&extraPrints);
+    p_enableExtraPrints(&extraPrints);
     bool running, show_menu;
     int result_rows = RESULT_ROWS;
 

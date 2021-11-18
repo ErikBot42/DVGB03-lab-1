@@ -8,7 +8,7 @@
 #define SIZE_START 512
 
 
-//#define DEBUG
+#define DEBUG
 
 
 void ui_DEBUG_print_list(int *d, int n); // FOR DEBUG ONLY
