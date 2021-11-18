@@ -14,13 +14,22 @@
 // Private
 //
 
-// ONLY changed for LaTeX print
-static bool enableExtraPrints=true; 
+// Function that behaves like a global variable
+bool p_enableExtraPrints(bool *enableExtraPrints)
+{
+    static bool *e = NULL;
+    e = enableExtraPrints==NULL ? e : enableExtraPrints;
+    return (e == NULL) ? false : *e;
+}
+
+// should extra info be printed to the screen
+// currently only changed for making a LaTeX only print
+bool enableExtraPrints() { return p_enableExtraPrints(NULL);}
 
 static bool ui_info()
 {
-    if (enableExtraPrints) printf("info> ");
-    return enableExtraPrints; // allways print info
+    if (enableExtraPrints()) printf("info> ");
+    return enableExtraPrints(); // allways print info
 }
 
 static void ui_invalid_input()
@@ -318,6 +327,8 @@ static void ui_set_print_case(case_t *c, case_t c_new)
 
 void ui_run()
 {
+    bool extraPrints = true;
+    enableExtraPrints(&extraPrints);
     bool running, show_menu;
     int result_rows = RESULT_ROWS;
 
@@ -335,7 +346,7 @@ void ui_run()
         char * choices = ui_get_choices(max_num_choices); // allow user to input multiple things at once
         bool keepReadingChoices = true;
         bool LaTeX_mode = false;
-        bool resetExtraPrints = enableExtraPrints;
+        bool resetExtraPrints = extraPrints;
         for (int i = 0; i<max_num_choices && keepReadingChoices; i++)
         {
             char choice = choices[i];
@@ -360,12 +371,12 @@ void ui_run()
                 case 'k': ui_set_print_case(&ac.c,average_t); break;
                 case 'l': ++result_rows; if (ui_info()) { ui_print_num_rows(result_rows, start_size); } break;
                 case 'm': result_rows = result_rows > 1 ? result_rows-1 : 1; if (ui_info()) { ui_print_num_rows(result_rows, start_size); } break;
-                case 'n': LaTeX_mode = true; enableExtraPrints=false; break;
+                case 'n': LaTeX_mode = true; extraPrints=false; break;
                 case '\0': keepReadingChoices = false; if (i == 0) { show_menu = false; ui_invalid_input(); } break;
                 default: keepReadingChoices = false; show_menu = false; ui_invalid_input(); break;
             }
         }
-        enableExtraPrints = resetExtraPrints;
+        extraPrints = resetExtraPrints;
         free(choices);
     }
     ui_exit();
@@ -384,16 +395,17 @@ void ui_DEBUG_print_list(int *d, int n)
 
 bool ui_error()
 {
-    if (enableExtraPrints) printf("error> ");
-    return enableExtraPrints; // allways print errors
+    if (enableExtraPrints()) printf("error> ");
+    return enableExtraPrints(); // allways print errors
 }
 
 bool ui_debug()
 {
 #ifdef DEBUG
-    if (enableExtraPrints) printf("debug> ");
-    return enableExtraPrints;
+    if (enableExtraPrints()) printf("debug> ");
+    return enableExtraPrints();
 #else
     return false;
 #endif
 }
+
