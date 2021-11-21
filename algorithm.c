@@ -134,14 +134,13 @@ void insertion_sort(int *a, int n)
 // n = number of elements (n>=2)
 // post:
 // *a is sorted
-void quick_sort(int *a, int n);
-
 void quick_sort(int *a, int n)
 {
     if (n <= 1) return;
     int b = partition(a, n);
-    quick_sort(a, b);         // lower
-    quick_sort(a+b+1, n-b-1); // upper
+    quick_sort(a, b);         // lower: indexes [0..(b-1)]
+    quick_sort(a+b+1, n-b-1); // upper: indexes [(b+1)..(n-1)]
+    //printf("pivot: a[%d], |a| = %d ", b, n); ui_DEBUG_print_list(a, n); 
 }
 
 bool linear_search(const int *a, int n, int v)

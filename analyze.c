@@ -49,6 +49,7 @@ static inline int intRand()
 // generate sorted list with elements [0,n-1] or [n-1,0] if reverse is true.
 static void generateSortedList(int *d, int n, bool reverse)
 {
+    //if (ui_debug()) printf("gen: sorted\n");
     for (int i = 0; i<n; i++)
     {
         if (!reverse)
@@ -62,6 +63,7 @@ static void generateSortedList(int *d, int n, bool reverse)
 // post: [0,maxValue]
 static void generateRandomList(int *d, int n, int maxValue)
 {
+    //if (ui_debug()) printf("gen: random\n");
     for (int i = 0; i<n; i++)
     {
         d[i] = intRand()%(maxValue+1);
@@ -79,7 +81,7 @@ static int randomIndex(int list_size)
 //    if(ui_error()) printf("Case not implemented for this algorithm, using a random list\n");
 //}
 
-// n = 2^k for this to work well, otherwise behavior is undefined
+// pre: n=k^2 && k > 0
 // because of data reuse, this algorithm is O(n*log(n))
 // produces a best case for quick sort where all elements are unique
 static void quickSortBestCase_rec(int *d, int n)
@@ -107,7 +109,8 @@ static void quickSortBestCase_rec(int *d, int n)
 }
 
 
-// pre: n=k^2 && n>0 | k = positive integer
+// pre: n=k^2 && k > 0
+// Caches previous result
 static void quickSortBestCase(int *d, int n)
 {
 
@@ -132,7 +135,8 @@ static void quickSortBestCase(int *d, int n)
 
     if (d_cached == NULL)
     {
-        if (ui_debug()) printf("NEW LIST!!! \n");
+        //if (ui_debug()) printf("gen: qsort best case\n");
+        //if (ui_debug()) printf("NEW LIST!!! \n");
         quickSortBestCase_rec(d,n);
 
         if (true) // should values be cached?
@@ -238,8 +242,9 @@ static double runTimedBenchmark(const algorithm_t a, int *d, int n, int v, bool*
 #ifndef USE_POSIX_COMPLIANT    
     clock_t t = clock();
 #else
+#define CLOCK_THAT_IS_USED CLOCK_MONOTONIC
     struct timespec before;
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &before);
+    clock_gettime(CLOCK_THAT_IS_USED, &before);
 #endif 
 
     // the overhead from the switch is assumed to be completely negligable.
@@ -258,7 +263,7 @@ static double runTimedBenchmark(const algorithm_t a, int *d, int n, int v, bool*
     return ((double)(t2-t))/CLOCKS_PER_SEC;;
 #else
     struct timespec after;
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &after);
+    clock_gettime(CLOCK_THAT_IS_USED, &after);
     double ndiff = (after.tv_nsec-before.tv_nsec);
     double sdiff = (after.tv_sec-before.tv_sec);
     return (ndiff/(1E9))+sdiff; // nanosecond->second
@@ -302,6 +307,7 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
 
     int size = SIZE_START;
     int numTests = isSearchingAlgorithm ? ITERATIONS_SEARCH : ITERATIONS;
+    int numPreheat = numTests/4; // discard these benchmarks, used to fill cpu cache/similar stuff
 
     for (int i = 0; i<n; i++) // changing size
     {
@@ -320,10 +326,10 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
             break;
         }
 
-        double averageTime = 0;
+        volatile double averageTime = 0;
         bool debug = ui_debug();
         bool cache = false; // should old list be reused?
-        for (int j = 0; j<numTests; j++) // multiple iterations at a given size
+        for (int j = 0; j<(numTests + numPreheat); j++) // multiple iterations at a given size
         {
             if (debug) { printf("."); fflush(stdout); }
             int v;
@@ -336,12 +342,19 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
             //if (cache && j==0) memcpy(d2,d,size);
             bool searchResult = true;
 
-            if (debug) { printf("_"); fflush(stdout); }
-            averageTime += runTimedBenchmark(ac.a,d,size,v,&searchResult)/((double)numTests);
+
+            // hopefully forces gcc to actually run the function
+            volatile double time = runTimedBenchmark(ac.a,d,size,v,&searchResult);
+            if (!(j<numPreheat))
+            {
+                averageTime += time/((double)numTests);
+                if (debug) { printf("_"); fflush(stdout); }
+            }
+            else if (debug) { printf("|"); fflush(stdout); }
 
             //TODO: UI ERR
-            if (!isSorted(d, size)) printf("error> LIST WAS NOT SORTED!\n");
-            if (!searchResult) printf("error> ALGORITHM COULD NOT FIND ELEMENT!\n");
+            if (!isSearchingAlgorithm && !isSorted(d, size)) printf("error> LIST WAS NOT SORTED!\n");
+            if (isSearchingAlgorithm && !searchResult) printf("error> ALGORITHM COULD NOT FIND ELEMENT!\n");
 
         }
         if (debug) printf("\n");
@@ -396,6 +409,8 @@ void calcModelData(model_t *m, result_t *r, int ms, int rs)
         //points[0][1] = 0;
         //points[1][0] = 1;
         //points[1][1] = .1;
+        
+        // k, avg
         for (int i = 0; i<rs; i++)
         {   
             double res = c_res(m[j], r[i]);
@@ -405,11 +420,18 @@ void calcModelData(model_t *m, result_t *r, int ms, int rs)
             points[i][0] = r[i].size;
             points[i][1] = res;
 
-            double err = res - m[j].avg; 
-            double squared = err*err;
-            m[j].sd += squared/((double) rs);
         }   
         m[j].k = linearRegression(points, rs);
-        m[j].sd = sqrt(m[j].sd);
+
+        // sd
+        for (int i = 0; i<rs; i++)
+        {
+            double res = c_res(m[j], r[i]);
+            double err = res - m[j].avg; 
+            double squared = err*err;
+            m[j].sd += squared;
+        }
+        m[j].sd = sqrt(m[j].sd/((double) rs));
     }
+
 }
