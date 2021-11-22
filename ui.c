@@ -107,9 +107,14 @@ static void ui_print_case_full(algorithm_t a)
     printf("Current case: "); ui_print_case(a); printf("\n");
 }
 
+static int calc_num_el(int rows, int start_size)
+{
+    return start_size << (rows-1);
+}
+
 static void ui_print_num_rows(int rows, int start_size)
 {
-    printf("Current number of rows: %d (%d elements)\n", rows, start_size << (rows-1));
+    printf("Current number of rows: %d (%d elements)\n", rows, calc_num_el(rows, start_size));
 }
 
 static void ui_menu(algorithm_t a, case_t c, int rows, int start_size)
@@ -369,7 +374,9 @@ void ui_run()
                 case 'i': ui_set_print_case(&ac.c,best_t); break;
                 case 'j': ui_set_print_case(&ac.c,worst_t); break;
                 case 'k': ui_set_print_case(&ac.c,average_t); break;
-                case 'l': ++result_rows; if (ui_info()) { ui_print_num_rows(result_rows, start_size); } break;
+                case 'l': result_rows++;
+                          result_rows = calc_num_el(result_rows, start_size)>=0 ? result_rows : result_rows-1; // stop before element overflow
+                          if (ui_info()) { ui_print_num_rows(result_rows, start_size); } break;
                 case 'm': result_rows = result_rows > 1 ? result_rows-1 : 1; if (ui_info()) { ui_print_num_rows(result_rows, start_size); } break;
                 case 'n': LaTeX_mode = true; extraPrints=false; break;
                 case '\0': keepReadingChoices = false; if (i == 0) { show_menu = false; ui_invalid_input(); } break;
@@ -382,7 +389,6 @@ void ui_run()
     ui_exit();
 }
 
-// TODO: k
 // only to be used for debug, the end user should never see the lists
 void ui_DEBUG_print_list(int *d, int n)
 {
