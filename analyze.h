@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define ITERATIONS 32
+#define ITERATIONS 16
 #define ITERATIONS_SEARCH (ITERATIONS*8)
 //#define ITERATIONS_SEARCH 1
 
