@@ -293,12 +293,12 @@ static void ui_results(result_t *results, ac_t ac, int n, bool LaTeX_mode)
     for (int j = 0; j<num_models; j++) { p_dbl(models[j].avg,&p); }
     pln(&p); p_str("sd",&p); p.s=p.l; p_str("",&p); 
     for (int j = 0; j<num_models; j++) { p_dbl(models[j].sd,&p); }
-    pln(&p); p_str("k",&p); p.s=p.l; p_str("",&p); 
-    for (int j = 0; j<num_models; j++) { p_dbl(models[j].k,&p); }
+    //pln(&p); p_str("k",&p); p.s=p.l; p_str("",&p); 
+    //for (int j = 0; j<num_models; j++) { p_dbl(models[j].k,&p); }
     pln(&p); p_str("sd/avg",&p); p.s=p.l; p_str("",&p); 
     for (int j = 0; j<num_models; j++) { p_dbl(models[j].sd/models[j].avg,&p); }
-    pln(&p); p_str("k/avg",&p); p.s=p.l; p_str("",&p); 
-    for (int j = 0; j<num_models; j++) { p_dbl(models[j].k/models[j].avg,&p); }
+    //pln(&p); p_str("k/avg",&p); p.s=p.l; p_str("",&p); 
+    //for (int j = 0; j<num_models; j++) { p_dbl(models[j].k/models[j].avg,&p); }
     pln(&p);
     if (p.l) tabular_end();
     ui_results_print_min_model(models, ac, p, num_models);

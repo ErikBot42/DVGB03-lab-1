@@ -3,8 +3,9 @@
 
 #include <stdbool.h>
 
-#define ITERATIONS 16
-#define ITERATIONS_SEARCH (ITERATIONS*8)
+#define ITERATIONS 64
+//#define ITERATIONS 1
+#define ITERATIONS_SEARCH (ITERATIONS*1024)
 //#define ITERATIONS_SEARCH 1
 
 // algorithm_t defines different algorithms
