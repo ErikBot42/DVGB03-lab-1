@@ -23,7 +23,7 @@
 #endif
 
 
-#define DEBUG
+//#define DEBUG
 
 
 void ui_DEBUG_print_list(int *d, int n); // FOR DEBUG ONLY

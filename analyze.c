@@ -351,10 +351,10 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
                 if (debug) { printf("_"); fflush(stdout); }
             }
             else if (debug) { printf("|"); fflush(stdout); }
+            
 
-            //TODO: UI ERR
-            if (!isSearchingAlgorithm && !isSorted(d, size)) printf("error> LIST WAS NOT SORTED!\n");
-            if (isSearchingAlgorithm && !searchResult) printf("error> ALGORITHM COULD NOT FIND ELEMENT!\n");
+            if (!isSearchingAlgorithm && !isSorted(d, size) && ui_error()) printf("LIST WAS NOT SORTED!\n");
+            if (isSearchingAlgorithm && !searchResult && ui_error()) printf("ALGORITHM COULD NOT FIND ELEMENT!\n");
 
         }
         if (debug) printf("\n");
