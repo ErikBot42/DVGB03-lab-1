@@ -314,8 +314,8 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
         //int d[size];
 
         // stack is very limited (about 1 MB), allocating on heap instead.
-        if ((RAND_MAX)<size && ui_debug()) printf("LIST SIZE IS GREATER THAN RAND_MAX!\n");
-        if (ui_debug()) printf("allocating %d bytes.\n", (int)(size*sizeof(int)));
+        if ((RAND_MAX)<size) ui_debug("LIST SIZE IS GREATER THAN RAND_MAX!\n");
+        ui_debug("allocating new array.\n");
 
         int *d = (int *) malloc(sizeof(int)*(size));
         //int *d2 = (int *) malloc(sizeof(int)*(size));
@@ -327,7 +327,7 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
         }
 
         volatile double averageTime = 0;
-        bool debug = ui_debug();
+        bool debug = ui_debug("");
         bool cache = false; // should old list be reused?
         for (int j = 0; j<(numTests + numPreheat); j++) // multiple iterations at a given size
         {
@@ -353,15 +353,13 @@ void benchmark(const ac_t ac, result_t *buf, int n, int start_size)
             else if (debug) { printf("|"); fflush(stdout); }
             
 
-            if (!isSearchingAlgorithm && !isSorted(d, size) && ui_error()) printf("LIST WAS NOT SORTED!\n");
-            if (isSearchingAlgorithm && !searchResult && ui_error()) printf("ALGORITHM COULD NOT FIND ELEMENT!\n");
+            if (!isSearchingAlgorithm && !isSorted(d, size)) ui_error("LIST WAS NOT SORTED!\n");
+            if (isSearchingAlgorithm && !searchResult) ui_error("ALGORITHM COULD NOT FIND ELEMENT!\n");
 
         }
         if (debug) printf("\n");
 
-        if (debug) printf("releasing d\n");
         free(d);
-        //free(d2);
 
         buf[i].size = size;
         buf[i].time = averageTime;

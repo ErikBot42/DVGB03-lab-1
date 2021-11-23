@@ -8,8 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// NOTE: data analysis is part of ui, but the creation of data is not.
-
 //
 // Private
 //
@@ -392,23 +390,23 @@ void ui_run()
 // only to be used for debug, the end user should never see the lists
 void ui_DEBUG_print_list(int *d, int n)
 {
-    if (ui_debug())
+    if (ui_debug(""))
     {
         for (int i = 0; i<n; i++) printf("%d ", d[i]);
         printf("\n");
     }
 }
 
-bool ui_error()
+bool ui_error(char * t)
 {
-    if (enableExtraPrints()) printf("error> ");
+    if (enableExtraPrints()) printf("error> %s", t);
     return enableExtraPrints(); // allways print errors
 }
 
-bool ui_debug()
+bool ui_debug(char * t)
 {
 #ifdef DEBUG
-    if (enableExtraPrints()) printf("debug> ");
+    if (enableExtraPrints()) printf("debug> %s", t);
     return enableExtraPrints();
 #else
     return false;

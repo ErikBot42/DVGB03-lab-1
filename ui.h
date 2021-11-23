@@ -42,8 +42,8 @@ typedef struct {
     bool n; // add \num
 } pi_t;
 
-bool ui_debug();
+bool ui_debug(char *);
 
-bool ui_error();
+bool ui_error(char *);
 
 #endif
