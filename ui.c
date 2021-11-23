@@ -27,7 +27,7 @@ bool enableExtraPrints() { return p_enableExtraPrints(NULL);}
 static bool ui_info()
 {
     if (enableExtraPrints()) printf("info> ");
-    return enableExtraPrints(); // allways print info
+    return enableExtraPrints(); // always print info
 }
 
 static void ui_invalid_input()
@@ -220,6 +220,7 @@ static void pln1(pi_t *p)
     pln0(p, false);
 }
 
+// print functions to print aligned and for latex print
 static void p_pre(pi_t *p) { if (p->s) printf("&"); if(mm(p) && p->n) printf("\\num{"); } // print prefix
 static void p_suf(pi_t *p) { if (p->m && p->n) printf("}"); mm(p); p->m = false; } // print suffix
 static void p_int(int n, pi_t *p) { p->m = p->l; p_pre(p); printf("%*d ", p->w+3, n); p_suf(p); }
@@ -228,6 +229,7 @@ static void p_dbl(double d, pi_t *p) { p->m = p->l; p_pre(p); printf("% *.*E ", 
 static void p_str(char *s, pi_t *p) { p_pre(p); printf("%*s ", p->w+3, s);  p_suf(p); }
 //static void p_tbl_pre(pi_t *p) { if (p->l) printf("LaTeX table:\n"); else printf("Results:\n");}
 
+// To get function pointers for diffrent models
 static double O_1(double n) {return 1;}
 static double O_n(double n) {return n;}
 static double O_n2(double n) {return n*n;}
@@ -251,16 +253,14 @@ static model_t* getModels(int *n)
 }
 
 
-
-// Long, but splitting it would reduce readability.
+// print results from benchmark
+// Long, but splitting it might not reduce readability.
 static void ui_results(result_t *results, ac_t ac, int n, bool LaTeX_mode)
 {
 
     pi_t p = {LaTeX_mode ? 6 : 10, LaTeX_mode};
-    //p_tbl_pre(&p);
     if (p.l) table_begin();
     if (p.l) tabular_begin();
-    //if (p.l) printf("LaTeX table:\n");
     p.e = p.l;
 
     int num_models;
@@ -282,16 +282,6 @@ static void ui_results(result_t *results, ac_t ac, int n, bool LaTeX_mode)
         pln(&p);
     }
     calcModelData(models,results,num_models,n);
-    //for (int j = 0; j<num_models; j++) 
-    //{
-    //    for (int i = 0; i<n; i++)
-    //    {   
-    //        double res = c_res(models[j], results[i]);
-    //        res -= models[j].avg; res*=res;
-    //        models[j].sd += res/((double) n);
-    //    }   
-    //    models[j].sd = sqrt(models[j].sd);
-    //}
     pln1(&p); p_str("avg",&p); p.s=p.l; p_str("",&p); 
     for (int j = 0; j<num_models; j++) { p_dbl(models[j].avg,&p); }
     pln(&p); p_str("sd",&p); p.s=p.l; p_str("",&p); 
@@ -400,7 +390,7 @@ void ui_DEBUG_print_list(int *d, int n)
 bool ui_error(char * t)
 {
     if (enableExtraPrints()) printf("error> %s", t);
-    return enableExtraPrints(); // allways print errors
+    return enableExtraPrints(); // always print errors
 }
 
 bool ui_debug(char * t)
