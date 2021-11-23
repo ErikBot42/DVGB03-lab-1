@@ -27,23 +27,6 @@ static inline void swp (int *a, int *b)
     *b = tmp;
 }
 
-// random value with the max size of an int
-// device dependant, could be used to make sure rand() gives enough bits
-static inline int intRand()
-{
-    return rand();
-    //int n = log2(RAND_MAX); // this line will hopefully be optimized away by the compiler...
-    //int maxVal = 1 << n;
-
-    //int maxIntSizeLog2 = sizeof(int);
-    //int maxIntSize = 1 << maxIntSizeLog2;
-
-    //if (maxVal == maxIntSize) return rand();
-    //
-    //printf("RAND_MAX IS VERY LOW: %d", RAND_MAX);
-    //exit(1);
-
-}
 
 // post:
 // generate sorted list with elements [0,n-1] or [n-1,0] if reverse is true.
@@ -63,43 +46,34 @@ static void generateSortedList(int *d, int n, bool reverse)
 // post: [0,maxValue]
 static void generateRandomList(int *d, int n, int maxValue)
 {
-    //if (ui_debug()) printf("gen: random\n");
     for (int i = 0; i<n; i++)
     {
-        d[i] = intRand()%(maxValue+1);
+        d[i] = rand()%(maxValue+1);
     }
 }
 
 
 static int randomIndex(int list_size)
 {
-    return intRand()%list_size;
+    return rand()%list_size;
 }
 
-//static void err_case_not_implemented()
-//{
-//    if(ui_error()) printf("Case not implemented for this algorithm, using a random list\n");
-//}
 
 // pre: n=k^2 && k > 0
 // because of data reuse, this algorithm is O(n*log(n))
 // produces a best case for quick sort where all elements are unique
 static void quickSortBestCase_rec(int *d, int n)
 {
-    if (n <= 2)
+    if (n <= 1)
     {
-        d[0] = 2;
-        d[1] = 1;
+        d[0] = 1;
     }
     else 
     {
         int m = n/2;
         quickSortBestCase_rec(d+m,m);
-        //memcpy(d+m,d,m);
-        //quickSortBestCase_rec(d+m, m);
 
         // add, reverse and put in front
-        //for (int i = 0; i<m; i++) d[i] += m;
         for (int i = 0; i<m; i++)
         {
             int j = (n-1)-i;
@@ -227,7 +201,6 @@ static int generateTestList(const ac_t ac, int *d, int n, bool *cache)
             //            break;
     }
 
-    //if (ui_debug()) printf("index = %d/%d\n", searchIndex, n-1);
     return d[searchIndex];
 }
 
@@ -292,11 +265,7 @@ bool isSorted(int *d, int n)
 // pre:
 // result_t *buf already allocated.
 //
-//
 // start with SIZE_START, double each time
-// -> table to print
-// run until time is too large?
-// fp for timer.
 //
 // run a number of benchmarks for a variable size
 //
@@ -403,10 +372,6 @@ void calcModelData(model_t *m, result_t *r, int ms, int rs)
     for (int j = 0; j<ms; j++) 
     {
         double points[rs][2]; // for linear regression
-        //points[0][0] = 0;
-        //points[0][1] = 0;
-        //points[1][0] = 1;
-        //points[1][1] = .1;
         
         // k, avg
         for (int i = 0; i<rs; i++)
